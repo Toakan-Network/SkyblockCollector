@@ -3,6 +3,7 @@ package uk.toakan.tad.skyblockcollector;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import net.minecraft.client.Minecraft;
+import net.minecraft.locale.Language;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import skyblockdb.api.Currency;
@@ -15,6 +16,7 @@ import java.io.Reader;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.OptionalDouble;
+import java.util.function.Function;
 
 /** What the collector screen and the HUD panel both read, so the two can't disagree. Client thread. */
 public final class CollectorData {
@@ -24,13 +26,21 @@ public final class CollectorData {
         "LEGENDARY", 0xFFFFAA00, "MYTHIC", 0xFFFF55FF, "DIVINE", 0xFF55FFFF, "SPECIAL", 0xFFFF5555,
         "VERY_SPECIAL", 0xFFFF5555);
     private static Map<String, Integer> power;
+    private static Map<String, String> eventNpcs;
 
     private CollectorData() {}
 
     public static AccessorySuggestions.Result accessories(SkyblockDbApi db) {
         AccessoryFamilies families = AccessoryFamilies.current();
         return AccessorySuggestions.build(db.accessories(), db.referenceItems(),
-            families == null ? AccessoryFamilies.EMPTY : families, power(), id -> price(db, id), db::recipes, stock(db));
+            families == null ? AccessoryFamilies.EMPTY : families, power(), id -> price(db, id), db::recipes, stock(db),
+            eventNpcs());
+    }
+
+    /** The event's name for a row, or the event's ID when no lang file names it. */
+    public static Component eventName(String event) {
+        String key = "skyblock-collector.event." + event;
+        return Language.getInstance().has(key) ? Component.translatable(key) : Component.literal(event);
     }
 
     public static Component tierName(String tier) {
@@ -77,24 +87,33 @@ public final class CollectorData {
     }
 
     /** Read again on the next use, so opening the screen picks up a resource pack's change. */
-    public static void forgetPower() {
+    public static void forgetResources() {
         power = null;
+        eventNpcs = null;
     }
 
     /** Power per rarity, from {@code accessory_power.json}, so a resource pack can change it. */
     private static Map<String, Integer> power() {
-        if (power == null) {
-            Map<String, Integer> read = new HashMap<>();
-            Identifier id = Identifier.fromNamespaceAndPath(SkyblockCollector.MOD_ID, "accessory_power.json");
-            try (Reader reader = Minecraft.getInstance().getResourceManager().openAsReader(id)) {
-                for (Map.Entry<String, JsonElement> e : JsonParser.parseReader(reader).getAsJsonObject().entrySet()) {
-                    read.put(e.getKey(), e.getValue().getAsInt());
-                }
-            } catch (IOException | RuntimeException e) {
-                SkyblockCollector.LOGGER.warn("Could not read {}: {}", id, e.toString());
-            }
-            power = read;
-        }
+        if (power == null) power = readMap("accessory_power.json", JsonElement::getAsInt);
         return power;
+    }
+
+    /** Shop NPC to the event it only sells during, from {@code accessory_events.json}. */
+    private static Map<String, String> eventNpcs() {
+        if (eventNpcs == null) eventNpcs = readMap("accessory_events.json", JsonElement::getAsString);
+        return eventNpcs;
+    }
+
+    private static <T> Map<String, T> readMap(String file, Function<JsonElement, T> value) {
+        Map<String, T> read = new HashMap<>();
+        Identifier id = Identifier.fromNamespaceAndPath(SkyblockCollector.MOD_ID, file);
+        try (Reader reader = Minecraft.getInstance().getResourceManager().openAsReader(id)) {
+            for (Map.Entry<String, JsonElement> e : JsonParser.parseReader(reader).getAsJsonObject().entrySet()) {
+                read.put(e.getKey(), value.apply(e.getValue()));
+            }
+        } catch (IOException | RuntimeException e) {
+            SkyblockCollector.LOGGER.warn("Could not read {}: {}", id, e.toString());
+        }
+        return read;
     }
 }

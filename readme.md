@@ -22,6 +22,10 @@ Open your Accessory Bag once so the mod can see it.
     Accessory Bag, so an upgrade can use the lower tier you own. Coin and bit costs are checked too.
   - **Can buy now:** its price is within your purse plus bank.
   - **Everything else.**
+- ⚒ marks a Can make row that needs the Forge.
+- Items from a shop that only opens for an event never count as Can make, and the row names the event.
+- Only one accessory of a family counts, so options in a family that add the same power (such as the Abicases) show as
+  one row, the easiest to get.
 - **Owned** lists your accessories with their power. Lower tiers of a family and copies show as not counted.
 
 Only the best accessory of a family counts, and a recombobulated one counts one rarity higher.
@@ -61,6 +65,7 @@ NotEnoughUpdates repository on GitHub, for accessory upgrade lines. Only those l
 ## Customising
 - Catch hints and all text are in the lang file, so a resource pack can change or translate them.
 - Power per rarity is `assets/skyblock-collector/accessory_power.json`, also replaceable by a pack.
+- Event shops are `assets/skyblock-collector/accessory_events.json` (NPC ID to event), also replaceable by a pack.
 
 ## Building from source
 Requires Java 25. `./gradlew build` puts the jar in `build/libs`.

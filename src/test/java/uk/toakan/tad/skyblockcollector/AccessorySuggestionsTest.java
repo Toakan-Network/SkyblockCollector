@@ -48,7 +48,47 @@ class AccessorySuggestionsTest {
                                                      AccessorySuggestions.Stock stock) {
         return AccessorySuggestions.build(bag, items, FAMILIES, POWER, id -> prices.containsKey(id)
             ? OptionalDouble.of(prices.get(id)) : OptionalDouble.empty(),
-            id -> recipes.containsKey(id) ? List.of(recipes.get(id)) : List.of(), stock);
+            id -> recipes.containsKey(id) ? List.of(recipes.get(id)) : List.of(), stock, Map.of("EVENT_NPC", "festival"));
+    }
+
+    @Test
+    void forgeRecipesAreMarked() {
+        var forged = new Recipe("forge", "B", 1, Map.of("IRON", 1), 0, 60, "");
+        var r = build(List.of(), items(item("B", "RARE"), item("C", "RARE")), Map.of(),
+            Map.of("B", forged, "C", recipe("C", Map.of("IRON", 1), 0)),
+            new AccessorySuggestions.Stock(Map.of("IRON", 1L), 0, 0));
+        assertTrue(r.canMake().stream().filter(s -> s.id().equals("B")).findFirst().orElseThrow().forge());
+        assertFalse(r.canMake().stream().filter(s -> s.id().equals("C")).findFirst().orElseThrow().forge());
+    }
+
+    @Test
+    void eventShopIsNeverCanMake() {
+        var shop = new Recipe("shop", "B", 1, Map.of("TREAT", 1), 0, 0, "EVENT_NPC");
+        var r = build(List.of(), items(item("B", "RARE")), Map.of(), Map.of("B", shop),
+            new AccessorySuggestions.Stock(Map.of("TREAT", 1L), 0, 0));
+        assertTrue(r.canMake().isEmpty());
+        assertEquals(List.of("B"), ids(r.unpriced()));
+        assertEquals("festival", r.unpriced().getFirst().event());
+    }
+
+    @Test
+    void sameFamilyAndGainIsOneRowKeepingTheEasiest() {
+        var misc = JsonParser.parseString("{\"talisman_upgrades\": {\"CASE_A\": [\"CASE_B\", \"CASE_C\"]}}").getAsJsonObject();
+        var r = AccessorySuggestions.build(List.of(),
+            items(item("CASE_A", "RARE"), item("CASE_B", "RARE"), item("CASE_C", "RARE")),
+            AccessoryFamilies.parse(misc), POWER, id -> id.equals("CASE_A") ? OptionalDouble.of(50) : OptionalDouble.empty(),
+            id -> id.equals("CASE_B") ? List.of(recipe("CASE_B", Map.of("IRON", 1), 0)) : List.of(),
+            new AccessorySuggestions.Stock(Map.of("IRON", 1L), 0, 0), Map.of());
+        assertEquals(List.of("CASE_B"), ids(r.canMake()));
+        assertTrue(r.priced().isEmpty());
+        assertTrue(r.unpriced().isEmpty());
+    }
+
+    @Test
+    void tiersOfAFamilyWithDifferentGainsAllStay() {
+        var r = build(List.of(), items(item("A_TALISMAN", "COMMON"), item("A_RING", "UNCOMMON")),
+            Map.of("A_TALISMAN", 1.0, "A_RING", 2.0));
+        assertEquals(2, r.priced().size());
     }
 
     private static Recipe recipe(String output, Map<String, Integer> inputs, long coins) {

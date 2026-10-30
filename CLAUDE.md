@@ -18,6 +18,7 @@ differs.
   Only `talisman_upgrades` and `ignored_talisman` are kept (`config/skyblock-collector/accessory_families.json`).
 - Can make now checks direct recipe inputs against `totals()`, purse + bank and bits. Other currency inputs count as
   not held, and unlocks aren't checked (no collection levels in the API).
+- Whether an event is running can't be read, so shops in `accessory_events.json` never count as can make.
 - Pack-changeable data: catch hints are lang keys `skyblock-collector.hint.<trophy id>`, power per rarity is
   `assets/skyblock-collector/accessory_power.json`.
 - No item icons: SkyblockDB's API is plain Java, with no `ItemStack`. Names use rarity colours.

@@ -53,7 +53,7 @@ public final class CollectorScreen extends Screen {
     public CollectorScreen(Screen parent) {
         super(Component.translatable("skyblock-collector.screen.title"));
         this.parent = parent;
-        CollectorData.forgetPower();
+        CollectorData.forgetResources();
     }
 
     @Override
@@ -253,6 +253,11 @@ public final class CollectorScreen extends Screen {
         out.add(Line.text(Component.translatable(heading), GOLD));
         for (AccessorySuggestions.Suggestion s : group) {
             Component name = suggestionName(s);
+            if (s.forge()) name = name.copy().append(" ").append(Component.translatable("skyblock-collector.accessory.forge_mark"));
+            if (!s.event().isEmpty()) {
+                name = name.copy().append(" ").append(Component.translatable(
+                    "skyblock-collector.accessory.needs", CollectorData.eventName(s.event())));
+            }
             if (showRequirements) {
                 List<String> needs = db.requirements(s.id());
                 if (!needs.isEmpty()) {

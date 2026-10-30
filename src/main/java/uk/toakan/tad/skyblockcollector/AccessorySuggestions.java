@@ -25,14 +25,18 @@ public final class AccessorySuggestions {
     private static final List<String> RARITIES = List.of("COMMON", "UNCOMMON", "RARE", "EPIC", "LEGENDARY", "MYTHIC", "DIVINE");
     private static final List<String> SPECIAL_RARITIES = List.of("SPECIAL", "VERY_SPECIAL");
     private static final String ACCESSORY = "ACCESSORY";
+    private static final String FORGE = "forge";
     private static final String COIN_INPUT = "SKYBLOCK_COIN";
     private static final String BIT_INPUT = "SKYBLOCK_BIT";
 
     /** An owned accessory. {@code counted} is false when a better one of its family, or a copy, is what counts. */
     public record Owned(String id, String name, String rarity, int power, boolean counted) {}
 
-    /** Something to get. {@code price} is NaN when unknown. */
-    public record Suggestion(String id, String name, String rarity, int gain, double price) {
+    /**
+     * Something to get. {@code price} is NaN when unknown. {@code forge}: it can be made, but only in the Forge.
+     * {@code event}: the event its shop opens for when that is the reason it can't be made, else empty.
+     */
+    public record Suggestion(String id, String name, String rarity, int gain, double price, boolean forge, String event) {
         public double coinsPerPower() {
             return price / gain;
         }
@@ -76,7 +80,7 @@ public final class AccessorySuggestions {
 
     public static Result build(List<AccessoryItem> bag, Map<String, ReferenceItem> items, AccessoryFamilies families,
                                Map<String, Integer> power, Function<String, OptionalDouble> price,
-                               Function<String, List<Recipe>> recipes, Stock stock) {
+                               Function<String, List<Recipe>> recipes, Stock stock, Map<String, String> eventNpcs) {
         List<Owned> owned = new ArrayList<>();
         Map<String, Integer> best = new HashMap<>();
         Set<String> ownedIds = new HashSet<>();
@@ -114,9 +118,15 @@ public final class AccessorySuggestions {
             if (gain <= 0) continue;
             OptionalDouble cost = price.apply(item.sbId());
             boolean hasPrice = cost.isPresent() && cost.getAsDouble() > 0;
+            // Whether an event is running can't be read, so a shop that only opens for one never counts as can make.
+            List<Recipe> all = recipes.apply(item.sbId());
+            List<Recipe> makeable = all.stream().filter(r -> !eventNpcs.containsKey(r.npc())).filter(stock::canMake).toList();
+            boolean forge = !makeable.isEmpty() && makeable.stream().allMatch(r -> FORGE.equals(r.type()));
+            String event = !makeable.isEmpty() ? "" : all.stream().map(r -> eventNpcs.getOrDefault(r.npc(), ""))
+                .filter(e -> !e.isEmpty()).findFirst().orElse("");
             Suggestion suggestion = new Suggestion(item.sbId(), item.name(), rarity, gain,
-                hasPrice ? cost.getAsDouble() : Double.NaN);
-            if (recipes.apply(item.sbId()).stream().anyMatch(stock::canMake)) canMake.add(suggestion);
+                hasPrice ? cost.getAsDouble() : Double.NaN, forge, event);
+            if (!makeable.isEmpty()) canMake.add(suggestion);
             else if (hasPrice && cost.getAsDouble() <= stock.coins()) canBuy.add(suggestion);
             else if (hasPrice) priced.add(suggestion);
             else unpriced.add(suggestion);
@@ -128,7 +138,22 @@ public final class AccessorySuggestions {
         canBuy.sort(byCoinsPerPower);
         priced.sort(byCoinsPerPower);
         unpriced.sort(Comparator.comparingInt(Suggestion::gain).reversed().thenComparing(Suggestion::name));
-        return new Result(total, owned, canMake, canBuy, priced, unpriced);
+        // Best group first, so of the options that are worth the same the one kept is the easiest to get.
+        Set<String> seen = new HashSet<>();
+        return new Result(total, owned, firstOfEach(canMake, families, seen), firstOfEach(canBuy, families, seen),
+            firstOfEach(priced, families, seen), firstOfEach(unpriced, families, seen));
+    }
+
+    /**
+     * One row per family and power gain. Only one accessory of a family counts, so eight Abicases that each add the
+     * same power are one choice, while the tiers of an upgrade line add different power and all stay.
+     */
+    private static List<Suggestion> firstOfEach(List<Suggestion> list, AccessoryFamilies families, Set<String> seen) {
+        List<Suggestion> out = new ArrayList<>();
+        for (Suggestion s : list) {
+            if (seen.add(families.family(s.id()) + "|" + s.gain())) out.add(s);
+        }
+        return out;
     }
 
     static String effectiveRarity(String rarity, boolean recombobulated) {

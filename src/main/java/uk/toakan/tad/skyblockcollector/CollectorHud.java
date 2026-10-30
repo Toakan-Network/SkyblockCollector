@@ -143,10 +143,15 @@ public final class CollectorHud {
         if (result.owned().isEmpty()) return;
         List<Row> group = new ArrayList<>();
         String canMake = I18n.get("skyblock-collector.hud.can_make");
-        for (AccessorySuggestions.Suggestion s : result.canMake()) group.add(accessoryRow(s, canMake, GREEN));
+        String forgeMark = I18n.get("skyblock-collector.accessory.forge_mark");
+        for (AccessorySuggestions.Suggestion s : result.canMake()) {
+            group.add(accessoryRow(s, s.forge() ? forgeMark + " " + canMake : canMake, GREEN));
+        }
         for (AccessorySuggestions.Suggestion s : result.canBuy()) group.add(accessoryRow(s, CollectorData.coins(s.price()), GOLD));
         for (AccessorySuggestions.Suggestion s : result.priced()) group.add(accessoryRow(s, CollectorData.coins(s.price()), GREY));
-        for (AccessorySuggestions.Suggestion s : result.unpriced()) group.add(accessoryRow(s, "", 0));
+        for (AccessorySuggestions.Suggestion s : result.unpriced()) {
+            group.add(accessoryRow(s, s.event().isEmpty() ? "" : CollectorData.eventName(s.event()).getString(), GREY));
+        }
         if (group.isEmpty()) return;
         out.add(new Row(I18n.get("skyblock-collector.hud.accessories", result.totalPower()), Settings.get().hudTitleColor, "", 0));
         HudRows.Limited<Row> limited = HudRows.limit(group, Settings.get().hudRows);
