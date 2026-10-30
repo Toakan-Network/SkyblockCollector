@@ -151,7 +151,7 @@ public final class CollectorHud {
         for (AccessorySuggestions.Suggestion s : result.canBuy()) group.add(accessoryRow(s, CollectorData.coins(s.price()), GOLD));
         for (AccessorySuggestions.Suggestion s : result.priced()) group.add(accessoryRow(s, CollectorData.coins(s.price()), GREY));
         for (AccessorySuggestions.Suggestion s : result.unpriced()) {
-            group.add(accessoryRow(s, s.event().isEmpty() ? "" : CollectorData.eventName(s.event()).getString(), GREY));
+            group.add(accessoryRow(s, s.needs().isEmpty() ? "" : CollectorData.needsName(s.needs()).getString(), GREY));
         }
         if (group.isEmpty()) return;
         out.add(new Row(I18n.get("skyblock-collector.hud.accessories", result.totalPower()), Settings.get().hudTitleColor, "", 0));

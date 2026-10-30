@@ -48,7 +48,7 @@ class AccessorySuggestionsTest {
                                                      AccessorySuggestions.Stock stock) {
         return AccessorySuggestions.build(bag, items, FAMILIES, POWER, id -> prices.containsKey(id)
             ? OptionalDouble.of(prices.get(id)) : OptionalDouble.empty(),
-            id -> recipes.containsKey(id) ? List.of(recipes.get(id)) : List.of(), stock, Map.of("EVENT_NPC", "festival"));
+            id -> recipes.containsKey(id) ? List.of(recipes.get(id)) : List.of(), stock, Map.of("EVENT_NPC", "festival"), Map.of());
     }
 
     @Test
@@ -95,13 +95,23 @@ class AccessorySuggestionsTest {
     }
 
     @Test
+    void lockedRewardIsNeitherMakeableNorBuyable() {
+        var shop = new Recipe("shop", "TOOTH", 1, Map.of("SKYBLOCK_COIN", 100), 0, 0, "ODGER");
+        var r = AccessorySuggestions.build(List.of(), items(item("TOOTH", "RARE")), FAMILIES, POWER, id -> OptionalDouble.of(50),
+            id -> List.of(shop), new AccessorySuggestions.Stock(Map.of(), 1000, 0), Map.of(), Map.of("TOOTH", "adept_trophy_fisher"));
+        assertTrue(r.canMake().isEmpty());
+        assertTrue(r.canBuy().isEmpty());
+        assertEquals("adept_trophy_fisher", r.priced().getFirst().needs());
+    }
+
+    @Test
     void eventShopIsNeverCanMake() {
         var shop = new Recipe("shop", "B", 1, Map.of("TREAT", 1), 0, 0, "EVENT_NPC");
         var r = build(List.of(), items(item("B", "RARE")), Map.of(), Map.of("B", shop),
             new AccessorySuggestions.Stock(Map.of("TREAT", 1L), 0, 0));
         assertTrue(r.canMake().isEmpty());
         assertEquals(List.of("B"), ids(r.unpriced()));
-        assertEquals("festival", r.unpriced().getFirst().event());
+        assertEquals("festival", r.unpriced().getFirst().needs());
     }
 
     @Test
@@ -111,7 +121,7 @@ class AccessorySuggestionsTest {
             items(item("CASE_A", "RARE"), item("CASE_B", "RARE"), item("CASE_C", "RARE")),
             AccessoryFamilies.parse(misc), POWER, id -> id.equals("CASE_A") ? OptionalDouble.of(50) : OptionalDouble.empty(),
             id -> id.equals("CASE_B") ? List.of(recipe("CASE_B", Map.of("IRON", 1), 0)) : List.of(),
-            new AccessorySuggestions.Stock(Map.of("IRON", 1L), 0, 0), Map.of());
+            new AccessorySuggestions.Stock(Map.of("IRON", 1L), 0, 0), Map.of(), Map.of());
         assertEquals(List.of("CASE_B"), ids(r.canMake()));
         assertTrue(r.priced().isEmpty());
         assertTrue(r.unpriced().isEmpty());

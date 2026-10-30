@@ -27,6 +27,8 @@ Open your Accessory Bag once so the mod can see it.
   you can buy now from an NPC, the auction house or the bazaar).
 - ⚒ marks a Can make row that needs the Forge.
 - Items from a shop that only opens for an event never count as Can make, and the row names the event.
+- Odger's teeth are rewards for your Trophy Fisher rank, worked out from your fish counts, so they can't be bought until
+  you reach it, and the row names the rank.
 - Only one accessory of a family counts, so options in a family that add the same power (such as the Abicases) show as
   one row, the easiest to get.
 - **Owned** lists your accessories with their power. Lower tiers of a family and copies show as not counted.
@@ -69,6 +71,7 @@ NotEnoughUpdates repository on GitHub, for accessory upgrade lines. Only those l
 - Catch hints and all text are in the lang file, so a resource pack can change or translate them.
 - Power per rarity is `assets/skyblock-collector/accessory_power.json`, also replaceable by a pack.
 - Event shops are `assets/skyblock-collector/accessory_events.json` (NPC ID to event), also replaceable by a pack.
+- Rank rewards are `assets/skyblock-collector/accessory_rank_rewards.json` (item ID to rank), also replaceable by a pack.
 
 ## Building from source
 Requires Java 25. `./gradlew build` puts the jar in `build/libs`.

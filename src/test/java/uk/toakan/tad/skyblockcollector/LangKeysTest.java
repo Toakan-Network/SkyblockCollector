@@ -53,8 +53,8 @@ class LangKeysTest {
 
         Set<String> unused = new TreeSet<>();
         for (String key : defined) {
-            // Hint keys are built from trophy IDs, event keys from accessory_events.json.
-            if (used.contains(key) || key.startsWith(MOD_ID + ".hint.") || key.startsWith(MOD_ID + ".event.")) continue;
+            // Hint keys are built from trophy IDs, needs keys from accessory_events.json and accessory_rank_rewards.json.
+            if (used.contains(key) || key.startsWith(MOD_ID + ".hint.") || key.startsWith(MOD_ID + ".needs.")) continue;
             boolean viaHelper = SUFFIXES.stream().anyMatch(s -> key.endsWith(s)
                 && used.contains(key.substring(0, key.length() - s.length())));
             if (!viaHelper) unused.add(key);

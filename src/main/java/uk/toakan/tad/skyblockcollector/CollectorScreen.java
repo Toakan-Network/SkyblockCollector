@@ -272,9 +272,9 @@ public final class CollectorScreen extends Screen {
         for (AccessorySuggestions.Suggestion s : group) {
             Component name = suggestionName(s);
             if (s.forge()) name = name.copy().append(" ").append(Component.translatable("skyblock-collector.accessory.forge_mark"));
-            if (!s.event().isEmpty()) {
+            if (!s.needs().isEmpty()) {
                 name = name.copy().append(" ").append(Component.translatable(
-                    "skyblock-collector.accessory.needs", CollectorData.eventName(s.event())));
+                    "skyblock-collector.accessory.needs", CollectorData.needsName(s.needs())));
             }
             if (showRequirements) {
                 List<String> needs = db.requirements(s.id());

@@ -35,11 +35,11 @@ public final class AccessorySuggestions {
 
     /**
      * Something to get. {@code price} is NaN when unknown. {@code forge}: it can be made, but only in the Forge.
-     * {@code shop}: the same, but only by buying it from an NPC. {@code event}: the event its shop opens for when that
-     * is the reason it can't be made, else empty.
+     * {@code shop}: the same, but only by buying it from an NPC. {@code needs}: the event or rank that is the reason it
+     * can't be got now, else empty.
      */
     public record Suggestion(String id, String name, String rarity, int gain, double price, boolean forge, boolean shop,
-                             String event) {
+                             String needs) {
         public double coinsPerPower() {
             return price / gain;
         }
@@ -103,7 +103,8 @@ public final class AccessorySuggestions {
 
     public static Result build(List<AccessoryItem> bag, Map<String, ReferenceItem> items, AccessoryFamilies families,
                                Map<String, Integer> power, Function<String, OptionalDouble> price,
-                               Function<String, List<Recipe>> recipes, Stock stock, Map<String, String> eventNpcs) {
+                               Function<String, List<Recipe>> recipes, Stock stock, Map<String, String> eventNpcs,
+                               Map<String, String> locked) {
         List<Owned> owned = new ArrayList<>();
         Map<String, Integer> best = new HashMap<>();
         Set<String> ownedIds = new HashSet<>();
@@ -143,15 +144,18 @@ public final class AccessorySuggestions {
             boolean hasPrice = cost.isPresent() && cost.getAsDouble() > 0;
             // Whether an event is running can't be read, so a shop that only opens for one never counts as can make.
             List<Recipe> all = recipes.apply(item.sbId());
-            List<Recipe> makeable = all.stream().filter(r -> !eventNpcs.containsKey(r.npc())).filter(stock::canMake).toList();
+            // A locked accessory is a reward: its shop only replaces a lost one, so nothing about it can be bought yet.
+            String lock = locked.get(item.sbId());
+            List<Recipe> makeable = lock != null ? List.of()
+                : all.stream().filter(r -> !eventNpcs.containsKey(r.npc())).filter(stock::canMake).toList();
             boolean forge = !makeable.isEmpty() && makeable.stream().allMatch(r -> FORGE.equals(r.type()));
             boolean shop = !makeable.isEmpty() && makeable.stream().allMatch(r -> SHOP.equals(r.type()));
-            String event = !makeable.isEmpty() ? "" : all.stream().map(r -> eventNpcs.getOrDefault(r.npc(), ""))
-                .filter(e -> !e.isEmpty()).findFirst().orElse("");
+            String needs = lock != null ? lock : !makeable.isEmpty() ? "" : all.stream()
+                .map(r -> eventNpcs.getOrDefault(r.npc(), "")).filter(e -> !e.isEmpty()).findFirst().orElse("");
             Suggestion suggestion = new Suggestion(item.sbId(), item.name(), rarity, gain,
-                hasPrice ? cost.getAsDouble() : Double.NaN, forge, shop, event);
+                hasPrice ? cost.getAsDouble() : Double.NaN, forge, shop, needs);
             if (!makeable.isEmpty()) canMake.add(suggestion);
-            else if (hasPrice && cost.getAsDouble() <= stock.coins()) canBuy.add(suggestion);
+            else if (lock == null && hasPrice && cost.getAsDouble() <= stock.coins()) canBuy.add(suggestion);
             else if (hasPrice) priced.add(suggestion);
             else unpriced.add(suggestion);
         }

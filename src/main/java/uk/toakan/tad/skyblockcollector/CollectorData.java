@@ -16,6 +16,7 @@ import java.io.Reader;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.OptionalDouble;
+import java.util.Set;
 import java.util.function.Function;
 
 /** What the collector screen and the HUD panel both read, so the two can't disagree. Client thread. */
@@ -27,6 +28,7 @@ public final class CollectorData {
         "VERY_SPECIAL", 0xFFFF5555);
     private static Map<String, Integer> power;
     private static Map<String, String> eventNpcs;
+    private static Map<String, String> rankRewards;
 
     private CollectorData() {}
 
@@ -34,13 +36,21 @@ public final class CollectorData {
         AccessoryFamilies families = AccessoryFamilies.current();
         return AccessorySuggestions.build(db.accessories(), db.referenceItems(),
             families == null ? AccessoryFamilies.EMPTY : families, power(), id -> price(db, id), db::recipes, stock(db),
-            eventNpcs()).filtered(Settings.get().accessoryFilter);
+            eventNpcs(), locked(db)).filtered(Settings.get().accessoryFilter);
     }
 
-    /** The event's name for a row, or the event's ID when no lang file names it. */
-    public static Component eventName(String event) {
-        String key = "skyblock-collector.event." + event;
-        return Language.getInstance().has(key) ? Component.translatable(key) : Component.literal(event);
+    /** Rank rewards whose Trophy Fisher rank isn't reached yet, each with that rank. */
+    private static Map<String, String> locked(SkyblockDbApi db) {
+        Set<String> ranks = TrophyGoals.fisherRanks(db.trophyFish());
+        Map<String, String> out = new HashMap<>(rankRewards());
+        out.values().removeAll(ranks);
+        return out;
+    }
+
+    /** The name of an event or rank for a row, or its ID when no lang file names it. */
+    public static Component needsName(String needs) {
+        String key = "skyblock-collector.needs." + needs;
+        return Language.getInstance().has(key) ? Component.translatable(key) : Component.literal(needs);
     }
 
     public static Component tierName(String tier) {
@@ -90,6 +100,13 @@ public final class CollectorData {
     public static void forgetResources() {
         power = null;
         eventNpcs = null;
+        rankRewards = null;
+    }
+
+    /** Accessory to the Trophy Fisher rank that earns it, from {@code accessory_rank_rewards.json}. */
+    private static Map<String, String> rankRewards() {
+        if (rankRewards == null) rankRewards = readMap("accessory_rank_rewards.json", JsonElement::getAsString);
+        return rankRewards;
     }
 
     /** Power per rarity, from {@code accessory_power.json}, so a resource pack can change it. */
