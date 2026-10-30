@@ -30,6 +30,8 @@ Open your Accessory Bag once so the mod can see it.
 - Odger's teeth and Researcher Ribery's accessories (Applicant's Statement up to PhD's Grimoire) are rewards for your
   Trophy Fisher or Frog Collector rank, worked out from your counts. Until you reach the rank the row names it; after
   that the item moves to its own **Can claim now** group at the top. The Buy filter includes it.
+- Torrhus and Moonglade Rings and Artifacts need a Miria or Agatha milestone. The mod reads yours when you open that
+  NPC's menu; until it has seen one, those rows name the milestone instead of Can buy.
 - Only one accessory of a family counts, so options in a family that add the same power (such as the Abicases) show as
   one row, the easiest to get.
 - **Owned** lists your accessories with their power. Lower tiers of a family and copies show as not counted, and a list
@@ -78,6 +80,8 @@ NotEnoughUpdates repository on GitHub, for accessory upgrade lines. Only those l
 - Power per rarity is `assets/skyblock-collector/accessory_power.json`, also replaceable by a pack.
 - Event shops are `assets/skyblock-collector/accessory_events.json` (NPC ID to event), also replaceable by a pack.
 - Rank rewards are `assets/skyblock-collector/accessory_rank_rewards.json` (item ID to rank), also replaceable by a pack.
+- Milestone shops are `assets/skyblock-collector/accessory_milestones.json` (item ID to `npc:level`), also replaceable by
+  a pack.
 
 ## Building from source
 Requires Java 25. `./gradlew build` puts the jar in `build/libs`.

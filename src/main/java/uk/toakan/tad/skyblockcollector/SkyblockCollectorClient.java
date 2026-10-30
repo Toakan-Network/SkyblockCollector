@@ -42,6 +42,7 @@ public final class SkyblockCollectorClient implements ClientModInitializer {
         openKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
             "key.skyblock-collector.open", inputCode("KEY_J"), KEY_CATEGORY));
 
+        ClientTickEvents.END_CLIENT_TICK.register(Milestones::tick);
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             // The key only acts on SkyBlock; presses are still consumed so they don't queue up.
             if (openKey.consumeClick() && SkyblockDetector.isOnSkyblock() && client.gui.screen() == null) {

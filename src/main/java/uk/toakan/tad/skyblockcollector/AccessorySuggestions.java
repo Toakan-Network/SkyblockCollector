@@ -115,7 +115,8 @@ public final class AccessorySuggestions {
     public static Result build(List<AccessoryItem> bag, Map<String, ReferenceItem> items, AccessoryFamilies families,
                                Map<String, Integer> power, Function<String, OptionalDouble> price,
                                Function<String, List<Recipe>> recipes, Stock stock, Map<String, String> eventNpcs,
-                               Map<String, String> locked, Set<String> claimable, List<String> forging) {
+                               Map<String, String> locked, Set<String> claimable, List<String> forging,
+                               Map<String, String> shopLocked) {
         List<Owned> owned = new ArrayList<>();
         Map<String, Integer> best = new HashMap<>();
         Set<String> ownedIds = new HashSet<>();
@@ -178,11 +179,14 @@ public final class AccessorySuggestions {
             List<Recipe> all = recipes.apply(item.sbId());
             // A locked accessory is a reward: its shop only replaces a lost one, so nothing about it can be bought yet.
             String lock = locked.get(item.sbId());
+            // A shop lock (an NPC milestone not reached) only closes that shop: the item can still be bought elsewhere.
+            String shopLock = shopLocked.get(item.sbId());
             List<Recipe> makeable = lock != null ? List.of()
-                : all.stream().filter(r -> !eventNpcs.containsKey(r.npc())).filter(stock::canMake).toList();
+                : all.stream().filter(r -> !eventNpcs.containsKey(r.npc()))
+                    .filter(r -> shopLock == null || !SHOP.equals(r.type())).filter(stock::canMake).toList();
             boolean forge = !makeable.isEmpty() && makeable.stream().allMatch(r -> FORGE.equals(r.type()));
             boolean shop = !makeable.isEmpty() && makeable.stream().allMatch(r -> SHOP.equals(r.type()));
-            String needs = lock != null ? lock : !makeable.isEmpty() ? "" : all.stream()
+            String needs = lock != null ? lock : !makeable.isEmpty() ? "" : shopLock != null ? shopLock : all.stream()
                 .map(r -> eventNpcs.getOrDefault(r.npc(), "")).filter(e -> !e.isEmpty()).findFirst().orElse("");
             Suggestion suggestion = new Suggestion(item.sbId(), item.name(), rarity, gain,
                 hasPrice ? cost.getAsDouble() : Double.NaN, forge, shop, needs);

@@ -31,6 +31,7 @@ public final class CollectorData {
     private static Map<String, Integer> power;
     private static Map<String, String> eventNpcs;
     private static Map<String, String> rankRewards;
+    private static Map<String, String> milestones;
 
     private CollectorData() {}
 
@@ -45,11 +46,28 @@ public final class CollectorData {
         claimable.removeAll(locked.keySet());
         return AccessorySuggestions.build(db.accessories(), db.referenceItems(),
             families == null ? AccessoryFamilies.EMPTY : families, power(), id -> price(db, id), db::recipes, stock(db),
-            eventNpcs(), locked, claimable, db.forging().stream().map(ForgeItem::sbId).toList())
-            .filtered(Settings.get().accessoryFilter);
+            eventNpcs(), locked, claimable, db.forging().stream().map(ForgeItem::sbId).toList(),
+            shopLocked(db)).filtered(Settings.get().accessoryFilter);
     }
 
-    /** The name of an event or rank for a row, or its ID when no lang file names it. */
+    /**
+     * Accessories whose NPC shop needs a milestone not reached, each with a needs ID such as {@code miria_milestone_5}.
+     * From {@code accessory_milestones.json}, as {@code npc:level}. A milestone not seen yet counts as not reached.
+     */
+    private static Map<String, String> shopLocked(SkyblockDbApi db) {
+        if (milestones == null) milestones = readMap("accessory_milestones.json", JsonElement::getAsString);
+        Map<String, String> out = new HashMap<>();
+        milestones.forEach((id, need) -> {
+            int colon = need.indexOf(':');
+            if (colon < 0) return;
+            String npc = need.substring(0, colon);
+            String level = need.substring(colon + 1);
+            if (Milestones.level(db, npc) < Integer.parseInt(level)) out.put(id, npc + "_milestone_" + level);
+        });
+        return out;
+    }
+
+    /** The name of an event, rank or milestone for a row, or its ID when no lang file names it. */
     public static Component needsName(String needs) {
         String key = "skyblock-collector.needs." + needs;
         return Language.getInstance().has(key) ? Component.translatable(key) : Component.literal(needs);
@@ -103,6 +121,7 @@ public final class CollectorData {
         power = null;
         eventNpcs = null;
         rankRewards = null;
+        milestones = null;
     }
 
     /** Accessory to the Trophy Fisher or Frog Collector rank that earns it, from {@code accessory_rank_rewards.json}. */
