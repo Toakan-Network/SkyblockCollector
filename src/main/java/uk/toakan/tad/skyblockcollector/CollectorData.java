@@ -14,6 +14,7 @@ import skyblockdb.api.TrophyProgress;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.OptionalDouble;
 import java.util.Set;
@@ -34,17 +35,15 @@ public final class CollectorData {
 
     public static AccessorySuggestions.Result accessories(SkyblockDbApi db) {
         AccessoryFamilies families = AccessoryFamilies.current();
+        // Rank rewards: locked with the rank still needed, or claimable once it is reached.
+        Set<String> ranks = TrophyGoals.fisherRanks(db.trophyFish());
+        Map<String, String> locked = new HashMap<>(rankRewards());
+        locked.values().removeAll(ranks);
+        Set<String> claimable = new HashSet<>(rankRewards().keySet());
+        claimable.removeAll(locked.keySet());
         return AccessorySuggestions.build(db.accessories(), db.referenceItems(),
             families == null ? AccessoryFamilies.EMPTY : families, power(), id -> price(db, id), db::recipes, stock(db),
-            eventNpcs(), locked(db)).filtered(Settings.get().accessoryFilter);
-    }
-
-    /** Rank rewards whose Trophy Fisher rank isn't reached yet, each with that rank. */
-    private static Map<String, String> locked(SkyblockDbApi db) {
-        Set<String> ranks = TrophyGoals.fisherRanks(db.trophyFish());
-        Map<String, String> out = new HashMap<>(rankRewards());
-        out.values().removeAll(ranks);
-        return out;
+            eventNpcs(), locked, claimable).filtered(Settings.get().accessoryFilter);
     }
 
     /** The name of an event or rank for a row, or its ID when no lang file names it. */

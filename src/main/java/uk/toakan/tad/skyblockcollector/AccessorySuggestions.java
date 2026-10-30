@@ -73,18 +73,19 @@ public final class AccessorySuggestions {
     }
 
     /**
-     * {@code canMake}: every input of a recipe is held. {@code canBuy}: has a price within the coins held.
-     * {@code priced} and {@code unpriced} hold the rest. A suggestion is in one list only.
+     * {@code canClaim}: a reward whose rank is reached. {@code canMake}: every input of a recipe is held.
+     * {@code canBuy}: has a price within the coins held. {@code priced} and {@code unpriced} hold the rest. A suggestion
+     * is in one list only.
      */
-    public record Result(int totalPower, List<Owned> owned, List<Suggestion> canMake, List<Suggestion> canBuy,
-                         List<Suggestion> priced, List<Suggestion> unpriced) {
-        /** Only what the filter asks for; what is owned stays. */
+    public record Result(int totalPower, List<Owned> owned, List<Suggestion> canClaim, List<Suggestion> canMake,
+                         List<Suggestion> canBuy, List<Suggestion> priced, List<Suggestion> unpriced) {
+        /** Only what the filter asks for; what is owned stays. A claim comes from an NPC, so it goes with buying. */
         public Result filtered(Filter filter) {
             if (filter == Filter.CRAFT) {
-                return new Result(totalPower, owned, canMake.stream().filter(s -> !s.shop()).toList(), List.of(), List.of(), List.of());
+                return new Result(totalPower, owned, List.of(), canMake.stream().filter(s -> !s.shop()).toList(), List.of(), List.of(), List.of());
             }
             if (filter == Filter.BUY) {
-                return new Result(totalPower, owned, canMake.stream().filter(Suggestion::shop).toList(), canBuy, List.of(), List.of());
+                return new Result(totalPower, owned, canClaim, canMake.stream().filter(Suggestion::shop).toList(), canBuy, List.of(), List.of());
             }
             return this;
         }
@@ -104,7 +105,7 @@ public final class AccessorySuggestions {
     public static Result build(List<AccessoryItem> bag, Map<String, ReferenceItem> items, AccessoryFamilies families,
                                Map<String, Integer> power, Function<String, OptionalDouble> price,
                                Function<String, List<Recipe>> recipes, Stock stock, Map<String, String> eventNpcs,
-                               Map<String, String> locked) {
+                               Map<String, String> locked, Set<String> claimable) {
         List<Owned> owned = new ArrayList<>();
         Map<String, Integer> best = new HashMap<>();
         Set<String> ownedIds = new HashSet<>();
@@ -130,6 +131,7 @@ public final class AccessorySuggestions {
         }
         owned.sort(Comparator.comparingInt(Owned::power).reversed().thenComparing(Owned::name));
 
+        List<Suggestion> canClaim = new ArrayList<>();
         List<Suggestion> canMake = new ArrayList<>();
         List<Suggestion> canBuy = new ArrayList<>();
         List<Suggestion> priced = new ArrayList<>();
@@ -154,7 +156,8 @@ public final class AccessorySuggestions {
                 .map(r -> eventNpcs.getOrDefault(r.npc(), "")).filter(e -> !e.isEmpty()).findFirst().orElse("");
             Suggestion suggestion = new Suggestion(item.sbId(), item.name(), rarity, gain,
                 hasPrice ? cost.getAsDouble() : Double.NaN, forge, shop, needs);
-            if (!makeable.isEmpty()) canMake.add(suggestion);
+            if (claimable.contains(item.sbId())) canClaim.add(suggestion);
+            else if (!makeable.isEmpty()) canMake.add(suggestion);
             else if (lock == null && hasPrice && cost.getAsDouble() <= stock.coins()) canBuy.add(suggestion);
             else if (hasPrice) priced.add(suggestion);
             else unpriced.add(suggestion);
@@ -162,13 +165,15 @@ public final class AccessorySuggestions {
         // Double.compare puts NaN last, so what has no price follows what has one.
         Comparator<Suggestion> byCoinsPerPower = Comparator.comparingDouble(Suggestion::coinsPerPower)
             .thenComparing(Suggestion::name);
+        canClaim.sort(byCoinsPerPower);
         canMake.sort(byCoinsPerPower);
         canBuy.sort(byCoinsPerPower);
         priced.sort(byCoinsPerPower);
         unpriced.sort(Comparator.comparingInt(Suggestion::gain).reversed().thenComparing(Suggestion::name));
         // Best group first, so of the options that are worth the same the one kept is the easiest to get.
         Set<String> seen = new HashSet<>();
-        return new Result(total, owned, firstOfEach(canMake, families, seen), firstOfEach(canBuy, families, seen),
+        return new Result(total, owned, firstOfEach(canClaim, families, seen), firstOfEach(canMake, families, seen),
+            firstOfEach(canBuy, families, seen),
             firstOfEach(priced, families, seen), firstOfEach(unpriced, families, seen));
     }
 

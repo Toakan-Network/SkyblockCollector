@@ -145,6 +145,8 @@ public final class CollectorHud {
         String canMake = I18n.get("skyblock-collector.hud.can_make");
         String canBuy = I18n.get("skyblock-collector.hud.can_buy");
         String forgeMark = I18n.get("skyblock-collector.accessory.forge_mark");
+        String canClaim = I18n.get("skyblock-collector.hud.can_claim");
+        for (AccessorySuggestions.Suggestion s : result.canClaim()) group.add(accessoryRow(s, canClaim, GREEN));
         for (AccessorySuggestions.Suggestion s : result.canMake()) {
             group.add(accessoryRow(s, s.shop() ? canBuy : s.forge() ? forgeMark + " " + canMake : canMake, GREEN));
         }

@@ -248,13 +248,14 @@ public final class CollectorScreen extends Screen {
             out.add(Line.text(Component.translatable("skyblock-collector.accessory.no_families"), GREY));
             return out;
         }
-        if (result.canMake().isEmpty() && result.canBuy().isEmpty() && result.priced().isEmpty() && result.unpriced().isEmpty()) {
+        if (result.canClaim().isEmpty() && result.canMake().isEmpty() && result.canBuy().isEmpty() && result.priced().isEmpty() && result.unpriced().isEmpty()) {
             boolean filtered = Settings.get().accessoryFilter != null && Settings.get().accessoryFilter != AccessorySuggestions.Filter.ALL;
             out.add(filtered ? Line.text(Component.translatable("skyblock-collector.accessory.filter_empty"), GREY)
                 : Line.text(Component.translatable("skyblock-collector.accessory.no_suggestions"), GREEN));
             return out;
         }
         out.add(Line.text(Component.translatable("skyblock-collector.accessory.estimate"), DARK_GREY));
+        addGroup(db, out, "skyblock-collector.accessory.can_claim", result.canClaim(), false);
         addGroup(db, out, "skyblock-collector.accessory.can_make", result.canMake().stream().filter(s -> !s.shop()).toList(), true);
         addGroup(db, out, "skyblock-collector.accessory.can_buy_npc", result.canMake().stream().filter(s -> s.shop()).toList(), true);
         addGroup(db, out, "skyblock-collector.accessory.can_buy", result.canBuy(), false);

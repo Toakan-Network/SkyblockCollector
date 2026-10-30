@@ -12,6 +12,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.OptionalDouble;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -48,7 +49,7 @@ class AccessorySuggestionsTest {
                                                      AccessorySuggestions.Stock stock) {
         return AccessorySuggestions.build(bag, items, FAMILIES, POWER, id -> prices.containsKey(id)
             ? OptionalDouble.of(prices.get(id)) : OptionalDouble.empty(),
-            id -> recipes.containsKey(id) ? List.of(recipes.get(id)) : List.of(), stock, Map.of("EVENT_NPC", "festival"), Map.of());
+            id -> recipes.containsKey(id) ? List.of(recipes.get(id)) : List.of(), stock, Map.of("EVENT_NPC", "festival"), Map.of(), Set.of());
     }
 
     @Test
@@ -95,10 +96,21 @@ class AccessorySuggestionsTest {
     }
 
     @Test
+    void earnedRewardIsClaimableEvenWithoutCoins() {
+        var shop = new Recipe("shop", "TOOTH", 1, Map.of("SKYBLOCK_COIN", 100), 0, 0, "ODGER");
+        var r = AccessorySuggestions.build(List.of(), items(item("TOOTH", "RARE")), FAMILIES, POWER, id -> OptionalDouble.empty(),
+            id -> List.of(shop), AccessorySuggestions.Stock.NONE, Map.of(), Map.of(), Set.of("TOOTH"));
+        assertEquals(List.of("TOOTH"), ids(r.canClaim()));
+        assertTrue(r.unpriced().isEmpty());
+        assertEquals(List.of("TOOTH"), ids(r.filtered(AccessorySuggestions.Filter.BUY).canClaim()));
+        assertTrue(r.filtered(AccessorySuggestions.Filter.CRAFT).canClaim().isEmpty());
+    }
+
+    @Test
     void lockedRewardIsNeitherMakeableNorBuyable() {
         var shop = new Recipe("shop", "TOOTH", 1, Map.of("SKYBLOCK_COIN", 100), 0, 0, "ODGER");
         var r = AccessorySuggestions.build(List.of(), items(item("TOOTH", "RARE")), FAMILIES, POWER, id -> OptionalDouble.of(50),
-            id -> List.of(shop), new AccessorySuggestions.Stock(Map.of(), 1000, 0), Map.of(), Map.of("TOOTH", "adept_trophy_fisher"));
+            id -> List.of(shop), new AccessorySuggestions.Stock(Map.of(), 1000, 0), Map.of(), Map.of("TOOTH", "adept_trophy_fisher"), Set.of());
         assertTrue(r.canMake().isEmpty());
         assertTrue(r.canBuy().isEmpty());
         assertEquals("adept_trophy_fisher", r.priced().getFirst().needs());
@@ -121,7 +133,7 @@ class AccessorySuggestionsTest {
             items(item("CASE_A", "RARE"), item("CASE_B", "RARE"), item("CASE_C", "RARE")),
             AccessoryFamilies.parse(misc), POWER, id -> id.equals("CASE_A") ? OptionalDouble.of(50) : OptionalDouble.empty(),
             id -> id.equals("CASE_B") ? List.of(recipe("CASE_B", Map.of("IRON", 1), 0)) : List.of(),
-            new AccessorySuggestions.Stock(Map.of("IRON", 1L), 0, 0), Map.of(), Map.of());
+            new AccessorySuggestions.Stock(Map.of("IRON", 1L), 0, 0), Map.of(), Map.of(), Set.of());
         assertEquals(List.of("CASE_B"), ids(r.canMake()));
         assertTrue(r.priced().isEmpty());
         assertTrue(r.unpriced().isEmpty());

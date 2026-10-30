@@ -16,7 +16,7 @@ Counts come from SkyblockAPI. If a tab says nothing is recorded, open the in-gam
 
 ## Accessories
 Open your Accessory Bag once so the mod can see it.
-- **What's next** lists missing accessories and upgrades, with the power each adds, in four groups. Each is ranked by
+- **What's next** lists missing accessories and upgrades, with the power each adds, in groups. Each is ranked by
   coins per power, and items with no lowest BIN or bazaar price come last.
   - **Can make now:** you hold every ingredient of a recipe, counting sacks, inventory, ender chest, backpacks and the
     Accessory Bag, so an upgrade can use the lower tier you own. Coin and bit costs are checked too.
@@ -27,8 +27,8 @@ Open your Accessory Bag once so the mod can see it.
   you can buy now from an NPC, the auction house or the bazaar).
 - ⚒ marks a Can make row that needs the Forge.
 - Items from a shop that only opens for an event never count as Can make, and the row names the event.
-- Odger's teeth are rewards for your Trophy Fisher rank, worked out from your fish counts, so they can't be bought until
-  you reach it, and the row names the rank.
+- Odger's teeth are rewards for your Trophy Fisher rank, worked out from your fish counts. Until you reach the rank the
+  row names it; after that the tooth moves to its own **Can claim now** group at the top. The Buy filter includes it.
 - Only one accessory of a family counts, so options in a family that add the same power (such as the Abicases) show as
   one row, the easiest to get.
 - **Owned** lists your accessories with their power. Lower tiers of a family and copies show as not counted.
