@@ -14,6 +14,8 @@ import skyblockdb.api.TrophyProgress;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.math.BigDecimal;
+import java.math.MathContext;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -47,7 +49,7 @@ public final class CollectorData {
         return AccessorySuggestions.build(db.accessories(), db.referenceItems(),
             families == null ? AccessoryFamilies.EMPTY : families, power(), id -> price(db, id), db::recipes, stock(db),
             eventNpcs(), locked, claimable, db.forging().stream().map(ForgeItem::sbId).toList(),
-            shopLocked(db)).filtered(Settings.get().accessoryFilter);
+            shopLocked(db), id -> AccessorySuggestions.bestDrop(id, db.droppedBy(id))).filtered(Settings.get().accessoryFilter);
     }
 
     /**
@@ -89,6 +91,19 @@ public final class CollectorData {
 
     public static int rarityColor(String rarity) {
         return RARITY_COLORS.getOrDefault(rarity, WHITE);
+    }
+
+    /** "(drops from Tarantula Broodfather, 0.4%)". The repository has a few chances above 1, which aren't percentages. */
+    public static Component dropText(AccessorySuggestions.Drop drop) {
+        if (drop.chance() <= 0 || drop.chance() > 1) {
+            return Component.translatable("skyblock-collector.accessory.drops_from_mob", drop.mob());
+        }
+        return Component.translatable("skyblock-collector.accessory.drops_from", drop.mob(), percent(drop.chance()));
+    }
+
+    /** 0.00412 as "0.41", two significant figures. */
+    static String percent(double chance) {
+        return new BigDecimal(chance * 100).round(new MathContext(2)).stripTrailingZeros().toPlainString();
     }
 
     /** 1234567 as "1.23M", 12345 as "12.3k". */

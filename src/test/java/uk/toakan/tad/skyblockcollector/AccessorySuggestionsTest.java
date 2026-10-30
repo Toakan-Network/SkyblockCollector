@@ -4,6 +4,9 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import org.junit.jupiter.api.Test;
 import skyblockdb.api.AccessoryItem;
+import skyblockdb.api.LootTable;
+import skyblockdb.api.Mob;
+import skyblockdb.api.MobDrop;
 import skyblockdb.api.Recipe;
 import skyblockdb.api.ReferenceItem;
 
@@ -49,7 +52,7 @@ class AccessorySuggestionsTest {
                                                      AccessorySuggestions.Stock stock) {
         return AccessorySuggestions.build(bag, items, FAMILIES, POWER, id -> prices.containsKey(id)
             ? OptionalDouble.of(prices.get(id)) : OptionalDouble.empty(),
-            id -> recipes.containsKey(id) ? List.of(recipes.get(id)) : List.of(), stock, Map.of("EVENT_NPC", "festival"), Map.of(), Set.of(), List.of(), Map.of());
+            id -> recipes.containsKey(id) ? List.of(recipes.get(id)) : List.of(), stock, Map.of("EVENT_NPC", "festival"), Map.of(), Set.of(), List.of(), Map.of(), id -> null);
     }
 
     @Test
@@ -119,7 +122,7 @@ class AccessorySuggestionsTest {
         var shop = new Recipe("shop", "B", 1, Map.of("COUPON", 30), 0, 0, "MIRIA_NPC");
         return AccessorySuggestions.build(List.of(), items(item("B", "RARE")), FAMILIES, POWER,
             id -> prices.containsKey(id) ? OptionalDouble.of(prices.get(id)) : OptionalDouble.empty(),
-            id -> List.of(shop), new AccessorySuggestions.Stock(Map.of("COUPON", 30L), 100, 0), Map.of(), Map.of(), Set.of(), List.of(), shopLocked);
+            id -> List.of(shop), new AccessorySuggestions.Stock(Map.of("COUPON", 30L), 100, 0), Map.of(), Map.of(), Set.of(), List.of(), shopLocked, id -> null);
     }
 
     @Test
@@ -141,9 +144,33 @@ class AccessorySuggestionsTest {
         assertEquals(List.of("B"), ids(buildShopLocked(Map.of(), Map.of()).canMake()));
     }
 
+    private static Mob mob(String name, String key, double chance) {
+        return new Mob(name, name, "", "", List.of(new LootTable(name, 1, 0, 0, List.of(new MobDrop(key, "item", chance, 1, 1, "")))));
+    }
+
+    @Test
+    void bestDropIsTheLikeliestMob() {
+        var best = AccessorySuggestions.bestDrop("T", List.of(mob("TIER_3", "T", 0.001), mob("TIER_5", "T", 0.004), mob("OTHER", "X", 0.9)));
+        assertEquals(new AccessorySuggestions.Drop("TIER_5", 0.004), best);
+        assertEquals(null, AccessorySuggestions.bestDrop("T", List.of(mob("OTHER", "X", 0.9))));
+        assertEquals(null, AccessorySuggestions.bestDrop("T", List.of()));
+    }
+
+    @Test
+    void dropFilterKeepsDropsWhetherOrNotTheyCanBeBought() {
+        var r = AccessorySuggestions.build(List.of(), items(item("AUCTION_DROP", "RARE"), item("ONLY_DROP", "RARE"), item("NOT_A_DROP", "RARE")),
+            FAMILIES, POWER, id -> id.equals("ONLY_DROP") ? OptionalDouble.empty() : OptionalDouble.of(10), id -> List.of(),
+            new AccessorySuggestions.Stock(Map.of(), 100, 0), Map.of(), Map.of(), Set.of(), List.of(), Map.of(),
+            id -> id.endsWith("_DROP") && !id.equals("NOT_A_DROP") ? new AccessorySuggestions.Drop("MOB", 0.01) : null);
+        var drops = r.filtered(AccessorySuggestions.Filter.DROP);
+        assertEquals(List.of("AUCTION_DROP"), ids(drops.canBuy()));
+        assertEquals(List.of("ONLY_DROP"), ids(drops.unpriced()));
+        assertTrue(drops.priced().isEmpty());
+    }
+
     private static AccessorySuggestions.Result buildForging(List<AccessoryItem> bag, Map<String, ReferenceItem> items, List<String> forging) {
         return AccessorySuggestions.build(bag, items, FAMILIES, POWER, id -> OptionalDouble.of(10), id -> List.of(),
-            AccessorySuggestions.Stock.NONE, Map.of(), Map.of(), Set.of(), forging, Map.of());
+            AccessorySuggestions.Stock.NONE, Map.of(), Map.of(), Set.of(), forging, Map.of(), id -> null);
     }
 
     @Test
@@ -169,7 +196,7 @@ class AccessorySuggestionsTest {
     void earnedRewardIsClaimableEvenWithoutCoins() {
         var shop = new Recipe("shop", "TOOTH", 1, Map.of("SKYBLOCK_COIN", 100), 0, 0, "ODGER");
         var r = AccessorySuggestions.build(List.of(), items(item("TOOTH", "RARE")), FAMILIES, POWER, id -> OptionalDouble.empty(),
-            id -> List.of(shop), AccessorySuggestions.Stock.NONE, Map.of(), Map.of(), Set.of("TOOTH"), List.of(), Map.of());
+            id -> List.of(shop), AccessorySuggestions.Stock.NONE, Map.of(), Map.of(), Set.of("TOOTH"), List.of(), Map.of(), id -> null);
         assertEquals(List.of("TOOTH"), ids(r.canClaim()));
         assertTrue(r.unpriced().isEmpty());
         assertEquals(List.of("TOOTH"), ids(r.filtered(AccessorySuggestions.Filter.BUY).canClaim()));
@@ -180,7 +207,7 @@ class AccessorySuggestionsTest {
     void lockedRewardIsNeitherMakeableNorBuyable() {
         var shop = new Recipe("shop", "TOOTH", 1, Map.of("SKYBLOCK_COIN", 100), 0, 0, "ODGER");
         var r = AccessorySuggestions.build(List.of(), items(item("TOOTH", "RARE")), FAMILIES, POWER, id -> OptionalDouble.of(50),
-            id -> List.of(shop), new AccessorySuggestions.Stock(Map.of(), 1000, 0), Map.of(), Map.of("TOOTH", "adept_trophy_fisher"), Set.of(), List.of(), Map.of());
+            id -> List.of(shop), new AccessorySuggestions.Stock(Map.of(), 1000, 0), Map.of(), Map.of("TOOTH", "adept_trophy_fisher"), Set.of(), List.of(), Map.of(), id -> null);
         assertTrue(r.canMake().isEmpty());
         assertTrue(r.canBuy().isEmpty());
         assertEquals("adept_trophy_fisher", r.priced().getFirst().needs());
@@ -203,7 +230,7 @@ class AccessorySuggestionsTest {
             items(item("CASE_A", "RARE"), item("CASE_B", "RARE"), item("CASE_C", "RARE")),
             AccessoryFamilies.parse(misc), POWER, id -> id.equals("CASE_A") ? OptionalDouble.of(50) : OptionalDouble.empty(),
             id -> id.equals("CASE_B") ? List.of(recipe("CASE_B", Map.of("IRON", 1), 0)) : List.of(),
-            new AccessorySuggestions.Stock(Map.of("IRON", 1L), 0, 0), Map.of(), Map.of(), Set.of(), List.of(), Map.of());
+            new AccessorySuggestions.Stock(Map.of("IRON", 1L), 0, 0), Map.of(), Map.of(), Set.of(), List.of(), Map.of(), id -> null);
         assertEquals(List.of("CASE_B"), ids(r.canMake()));
         assertTrue(r.priced().isEmpty());
         assertTrue(r.unpriced().isEmpty());

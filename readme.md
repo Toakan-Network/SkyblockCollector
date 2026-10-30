@@ -23,8 +23,9 @@ Open your Accessory Bag once so the mod can see it.
   - **Can buy from an NPC now:** the same check, for what an NPC sells instead of a recipe you craft.
   - **Can buy now:** its auction or bazaar price is within your purse plus bank.
   - **Everything else.**
-- The **Filter** button switches What's next and the HUD panel between All, Craft (what you can craft now) and Buy (what
-  you can buy now from an NPC, the auction house or the bazaar).
+- The **Filter** button switches What's next and the HUD panel between All, Craft (what you can craft now), Buy (what
+  you can buy now from an NPC, the auction house or the bazaar) and Drops (what a mob is known to drop, with the mob
+  and chance on the J screen).
 - ⚒ marks a Can make row that needs the Forge.
 - Items from a shop that only opens for an event never count as Can make, and the row names the event.
 - Odger's teeth and Researcher Ribery's accessories (Applicant's Statement up to PhD's Grimoire) are rewards for your
@@ -61,6 +62,8 @@ Rows per section (`hudRows`, default 5) and the panel's colours and corner radiu
   the row shows what the recipe needs.
 - Can make now uses counts from when each container was last open, checks direct ingredients only, and checks each
   accessory alone, so two rows can rely on the same items. Currencies other than coins and bits count as not held.
+- Drops only covers mob loot tables in the item repository. Accessories from dungeon chests, fishing and other sources
+  aren't listed.
 - Suggestions include anything the item list calls an accessory, including ones you may not be able to get yet.
 - The power total doesn't include Dungeon doubling, Abicase contact bonuses (+1 power per 2 Abiphone contacts) or
   accessories whose rarity was raised by other means (`upgradedRarity`, such as Book of Progression).

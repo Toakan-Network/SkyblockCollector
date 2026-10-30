@@ -1,6 +1,9 @@
 package uk.toakan.tad.skyblockcollector;
 
 import skyblockdb.api.AccessoryItem;
+import skyblockdb.api.LootTable;
+import skyblockdb.api.Mob;
+import skyblockdb.api.MobDrop;
 import skyblockdb.api.Recipe;
 import skyblockdb.api.ReferenceItem;
 
@@ -37,6 +40,24 @@ public final class AccessorySuggestions {
      */
     public record Owned(String id, String name, String rarity, int power, boolean counted, boolean forging) {}
 
+    /** A mob an accessory drops from. {@code chance} is per kill as the repository gives it: 0.04 is 4%. */
+    public record Drop(String mob, double chance) {}
+
+    /** The mob most likely to drop {@code id}, or null when none of {@code mobs} does. */
+    public static Drop bestDrop(String id, List<Mob> mobs) {
+        Drop best = null;
+        for (Mob mob : mobs) {
+            for (LootTable table : mob.lootTables()) {
+                for (MobDrop drop : table.drops()) {
+                    if (drop.key().equals(id) && (best == null || drop.chance() > best.chance())) {
+                        best = new Drop(mob.name(), drop.chance());
+                    }
+                }
+            }
+        }
+        return best;
+    }
+
     /**
      * An accessory in the bag that adds no power because of another. {@code copy}: {@code keptName} is the same item;
      * otherwise it is a better one of the same family.
@@ -46,10 +67,10 @@ public final class AccessorySuggestions {
     /**
      * Something to get. {@code price} is NaN when unknown. {@code forge}: it can be made, but only in the Forge.
      * {@code shop}: the same, but only by buying it from an NPC. {@code needs}: the event or rank that is the reason it
-     * can't be got now, else empty.
+     * can't be got now, else empty. {@code drop}: the mob that drops it most often, or null when none is known.
      */
     public record Suggestion(String id, String name, String rarity, int gain, double price, boolean forge, boolean shop,
-                             String needs) {
+                             String needs, Drop drop) {
         public double coinsPerPower() {
             return price / gain;
         }
@@ -97,13 +118,23 @@ public final class AccessorySuggestions {
             if (filter == Filter.BUY) {
                 return new Result(totalPower, owned, canClaim, canMake.stream().filter(Suggestion::shop).toList(), canBuy, List.of(), List.of(), redundant);
             }
+            if (filter == Filter.DROP) {
+                return new Result(totalPower, owned, dropped(canClaim), dropped(canMake), dropped(canBuy), dropped(priced), dropped(unpriced), redundant);
+            }
             return this;
         }
     }
 
-    /** Which suggestions to show: everything, what can be crafted now, or what can be bought now (NPC, auction, bazaar). */
+    private static List<Suggestion> dropped(List<Suggestion> list) {
+        return list.stream().filter(s -> s.drop() != null).toList();
+    }
+
+    /**
+     * Which suggestions to show: everything, what can be crafted now, what can be bought now (NPC, auction, bazaar), or
+     * what a mob is known to drop, whether or not it can also be bought.
+     */
     public enum Filter {
-        ALL, CRAFT, BUY;
+        ALL, CRAFT, BUY, DROP;
 
         public Filter next() {
             return values()[(ordinal() + 1) % values().length];
@@ -116,7 +147,7 @@ public final class AccessorySuggestions {
                                Map<String, Integer> power, Function<String, OptionalDouble> price,
                                Function<String, List<Recipe>> recipes, Stock stock, Map<String, String> eventNpcs,
                                Map<String, String> locked, Set<String> claimable, List<String> forging,
-                               Map<String, String> shopLocked) {
+                               Map<String, String> shopLocked, Function<String, Drop> drops) {
         List<Owned> owned = new ArrayList<>();
         Map<String, Integer> best = new HashMap<>();
         Set<String> ownedIds = new HashSet<>();
@@ -189,7 +220,7 @@ public final class AccessorySuggestions {
             String needs = lock != null ? lock : !makeable.isEmpty() ? "" : shopLock != null ? shopLock : all.stream()
                 .map(r -> eventNpcs.getOrDefault(r.npc(), "")).filter(e -> !e.isEmpty()).findFirst().orElse("");
             Suggestion suggestion = new Suggestion(item.sbId(), item.name(), rarity, gain,
-                hasPrice ? cost.getAsDouble() : Double.NaN, forge, shop, needs);
+                hasPrice ? cost.getAsDouble() : Double.NaN, forge, shop, needs, drops.apply(item.sbId()));
             if (claimable.contains(item.sbId())) canClaim.add(suggestion);
             else if (!makeable.isEmpty()) canMake.add(suggestion);
             else if (lock == null && hasPrice && cost.getAsDouble() <= stock.coins()) canBuy.add(suggestion);

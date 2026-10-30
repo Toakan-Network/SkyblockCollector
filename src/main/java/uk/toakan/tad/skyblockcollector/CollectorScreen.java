@@ -105,6 +105,7 @@ public final class CollectorScreen extends Screen {
     private static String filterKey(AccessorySuggestions.Filter filter) {
         if (filter == AccessorySuggestions.Filter.CRAFT) return "skyblock-collector.screen.filter.craft";
         if (filter == AccessorySuggestions.Filter.BUY) return "skyblock-collector.screen.filter.buy";
+        if (filter == AccessorySuggestions.Filter.DROP) return "skyblock-collector.screen.filter.drop";
         return "skyblock-collector.screen.filter.all";
     }
 
@@ -283,6 +284,7 @@ public final class CollectorScreen extends Screen {
         for (AccessorySuggestions.Suggestion s : group) {
             Component name = suggestionName(s);
             if (s.forge()) name = name.copy().append(" ").append(Component.translatable("skyblock-collector.accessory.forge_mark"));
+            if (s.drop() != null) name = name.copy().append(" ").append(CollectorData.dropText(s.drop()));
             if (!s.needs().isEmpty()) {
                 name = name.copy().append(" ").append(Component.translatable(
                     "skyblock-collector.accessory.needs", CollectorData.needsName(s.needs())));
