@@ -2,5 +2,9 @@
   "ODGERS_BRONZE_TOOTH": "novice_trophy_fisher",
   "ODGERS_SILVER_TOOTH": "adept_trophy_fisher",
   "ODGERS_GOLD_TOOTH": "expert_trophy_fisher",
-  "ODGERS_DIAMOND_TOOTH": "master_trophy_fisher"
+  "ODGERS_DIAMOND_TOOTH": "master_trophy_fisher",
+  "APPLICANT_STATEMENT": "novice_frog_collector",
+  "STUDENT_STUDIES": "adept_frog_collector",
+  "MASTER_THESIS": "expert_frog_collector",
+  "PHD_GRIMOIRE": "master_frog_collector"
 }

@@ -36,7 +36,8 @@ public final class CollectorData {
     public static AccessorySuggestions.Result accessories(SkyblockDbApi db) {
         AccessoryFamilies families = AccessoryFamilies.current();
         // Rank rewards: locked with the rank still needed, or claimable once it is reached.
-        Set<String> ranks = TrophyGoals.fisherRanks(db.trophyFish());
+        Set<String> ranks = new HashSet<>(TrophyGoals.fisherRanks(db.trophyFish()));
+        ranks.addAll(TrophyGoals.frogRanks(db.trophyFrogs()));
         Map<String, String> locked = new HashMap<>(rankRewards());
         locked.values().removeAll(ranks);
         Set<String> claimable = new HashSet<>(rankRewards().keySet());
@@ -102,7 +103,7 @@ public final class CollectorData {
         rankRewards = null;
     }
 
-    /** Accessory to the Trophy Fisher rank that earns it, from {@code accessory_rank_rewards.json}. */
+    /** Accessory to the Trophy Fisher or Frog Collector rank that earns it, from {@code accessory_rank_rewards.json}. */
     private static Map<String, String> rankRewards() {
         if (rankRewards == null) rankRewards = readMap("accessory_rank_rewards.json", JsonElement::getAsString);
         return rankRewards;

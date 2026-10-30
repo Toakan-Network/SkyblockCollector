@@ -18,6 +18,10 @@ public final class TrophyGoals {
     static final String ADEPT = "adept_trophy_fisher";
     static final String EXPERT = "expert_trophy_fisher";
     static final String MASTER = "master_trophy_fisher";
+    static final String FROG_NOVICE = "novice_frog_collector";
+    static final String FROG_ADEPT = "adept_frog_collector";
+    static final String FROG_EXPERT = "expert_frog_collector";
+    static final String FROG_MASTER = "master_frog_collector";
     private static final int NOVICE_KINDS = 15;
 
     private TrophyGoals() {}
@@ -54,6 +58,17 @@ public final class TrophyGoals {
         if (missing(fish, SILVER).isEmpty()) ranks.add(ADEPT);
         if (missing(fish, GOLD).isEmpty()) ranks.add(EXPERT);
         if (fish.stream().allMatch(t -> TIERS.stream().allMatch(tier -> t.caught(tier) > 0))) ranks.add(MASTER);
+        return ranks;
+    }
+
+    /** Frog Collector ranks earned, as named in {@code accessory_rank_rewards.json}. Novice needs every frog at Bronze. */
+    public static Set<String> frogRanks(List<TrophyProgress> frogs) {
+        Set<String> ranks = new HashSet<>();
+        if (frogs.isEmpty()) return ranks;
+        if (missing(frogs, BRONZE).isEmpty()) ranks.add(FROG_NOVICE);
+        if (missing(frogs, SILVER).isEmpty()) ranks.add(FROG_ADEPT);
+        if (missing(frogs, GOLD).isEmpty()) ranks.add(FROG_EXPERT);
+        if (frogs.stream().allMatch(t -> TIERS.stream().allMatch(tier -> t.caught(tier) > 0))) ranks.add(FROG_MASTER);
         return ranks;
     }
 

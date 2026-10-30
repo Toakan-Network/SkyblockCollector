@@ -27,8 +27,9 @@ Open your Accessory Bag once so the mod can see it.
   you can buy now from an NPC, the auction house or the bazaar).
 - ⚒ marks a Can make row that needs the Forge.
 - Items from a shop that only opens for an event never count as Can make, and the row names the event.
-- Odger's teeth are rewards for your Trophy Fisher rank, worked out from your fish counts. Until you reach the rank the
-  row names it; after that the tooth moves to its own **Can claim now** group at the top. The Buy filter includes it.
+- Odger's teeth and Researcher Ribery's accessories (Applicant's Statement up to PhD's Grimoire) are rewards for your
+  Trophy Fisher or Frog Collector rank, worked out from your counts. Until you reach the rank the row names it; after
+  that the item moves to its own **Can claim now** group at the top. The Buy filter includes it.
 - Only one accessory of a family counts, so options in a family that add the same power (such as the Abicases) show as
   one row, the easiest to get.
 - **Owned** lists your accessories with their power. Lower tiers of a family and copies show as not counted.
