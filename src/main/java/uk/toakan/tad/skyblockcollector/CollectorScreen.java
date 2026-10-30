@@ -9,6 +9,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.locale.Language;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
+import skyblockdb.api.Currency;
 import skyblockdb.api.PriceSource;
 import skyblockdb.api.ReferenceItem;
 import skyblockdb.api.SkyblockDbApi;
@@ -214,7 +215,7 @@ public final class CollectorScreen extends Screen {
         AccessoryFamilies families = AccessoryFamilies.current();
         Map<String, ReferenceItem> items = db.referenceItems();
         AccessorySuggestions.Result result = AccessorySuggestions.build(db.accessories(), items,
-            families == null ? AccessoryFamilies.EMPTY : families, power(), id -> price(db, id));
+            families == null ? AccessoryFamilies.EMPTY : families, power(), id -> price(db, id), db::recipes, stock(db));
         List<Line> out = new ArrayList<>();
         out.add(Line.text(Component.translatable("skyblock-collector.accessory.total",
             result.owned().size(), result.totalPower()), GOLD));
@@ -231,24 +232,53 @@ public final class CollectorScreen extends Screen {
             out.add(Line.text(Component.translatable("skyblock-collector.accessory.no_families"), GREY));
             return out;
         }
-        if (result.priced().isEmpty() && result.unpriced().isEmpty()) {
+        if (result.canMake().isEmpty() && result.canBuy().isEmpty() && result.priced().isEmpty() && result.unpriced().isEmpty()) {
             out.add(Line.text(Component.translatable("skyblock-collector.accessory.no_suggestions"), GREEN));
             return out;
         }
         out.add(Line.text(Component.translatable("skyblock-collector.accessory.estimate"), DARK_GREY));
-        for (AccessorySuggestions.Suggestion s : result.priced()) {
-            out.add(new Line(suggestionName(s), rarityColor(s.rarity()), Component.translatable(
-                "skyblock-collector.accessory.per_power", coins(s.price()), coins(s.coinsPerPower())), GOLD, null));
-        }
-        for (AccessorySuggestions.Suggestion s : result.unpriced()) {
-            out.add(new Line(suggestionName(s), rarityColor(s.rarity()),
-                Component.translatable("skyblock-collector.accessory.no_price"), GREY, null));
-        }
+        addGroup(db, out, "skyblock-collector.accessory.can_make", result.canMake(), true);
+        addGroup(db, out, "skyblock-collector.accessory.can_buy", result.canBuy(), false);
+        List<AccessorySuggestions.Suggestion> rest = new ArrayList<>(result.priced());
+        rest.addAll(result.unpriced());
+        addGroup(db, out, "skyblock-collector.accessory.rest", rest, false);
         return out;
+    }
+
+    /** A heading and its rows; nothing for an empty group. Only making something depends on a recipe being unlocked. */
+    private static void addGroup(SkyblockDbApi db, List<Line> out, String heading,
+                                 List<AccessorySuggestions.Suggestion> group, boolean showRequirements) {
+        if (group.isEmpty()) return;
+        out.add(Line.text(Component.translatable(heading), GOLD));
+        for (AccessorySuggestions.Suggestion s : group) {
+            Component name = suggestionName(s);
+            if (showRequirements) {
+                List<String> needs = db.requirements(s.id());
+                if (!needs.isEmpty()) {
+                    name = name.copy().append(" ").append(Component.translatable(
+                        "skyblock-collector.accessory.needs", String.join(", ", needs)));
+                }
+            }
+            out.add(new Line(name, rarityColor(s.rarity()), Double.isNaN(s.price())
+                ? Component.translatable("skyblock-collector.accessory.no_price")
+                : Component.translatable("skyblock-collector.accessory.per_power", coins(s.price()), coins(s.coinsPerPower())),
+                Double.isNaN(s.price()) ? GREY : GOLD, null));
+        }
     }
 
     private static Component suggestionName(AccessorySuggestions.Suggestion s) {
         return Component.literal(s.name() + " ").append(Component.translatable("skyblock-collector.accessory.gain", s.gain()));
+    }
+
+    private static AccessorySuggestions.Stock stock(SkyblockDbApi db) {
+        Map<String, Currency> currencies = db.currencies();
+        return new AccessorySuggestions.Stock(db.totals(),
+            currency(currencies, "purse") + currency(currencies, "bank"), currency(currencies, "bits"));
+    }
+
+    private static double currency(Map<String, Currency> currencies, String name) {
+        Currency currency = currencies.get(name);
+        return currency == null ? 0 : currency.value();
     }
 
     /** What it costs to buy now: lowest BIN, then the bazaar. Empty for what can't be bought. */

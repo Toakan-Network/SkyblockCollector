@@ -1,6 +1,7 @@
 package uk.toakan.tad.skyblockcollector;
 
 import skyblockdb.api.AccessoryItem;
+import skyblockdb.api.Recipe;
 import skyblockdb.api.ReferenceItem;
 
 import java.util.ArrayList;
@@ -24,6 +25,8 @@ public final class AccessorySuggestions {
     private static final List<String> RARITIES = List.of("COMMON", "UNCOMMON", "RARE", "EPIC", "LEGENDARY", "MYTHIC", "DIVINE");
     private static final List<String> SPECIAL_RARITIES = List.of("SPECIAL", "VERY_SPECIAL");
     private static final String ACCESSORY = "ACCESSORY";
+    private static final String COIN_INPUT = "SKYBLOCK_COIN";
+    private static final String BIT_INPUT = "SKYBLOCK_BIT";
 
     /** An owned accessory. {@code counted} is false when a better one of its family, or a copy, is what counts. */
     public record Owned(String id, String name, String rarity, int power, boolean counted) {}
@@ -35,12 +38,45 @@ public final class AccessorySuggestions {
         }
     }
 
-    public record Result(int totalPower, List<Owned> owned, List<Suggestion> priced, List<Suggestion> unpriced) {}
+    /**
+     * What the player holds, as of when each container was last open. {@code coins} is purse plus bank. Counts come
+     * from every container, the Accessory Bag included, so an upgrade can use the lower tier in the bag.
+     */
+    public record Stock(Map<String, Long> held, double coins, double bits) {
+        public static final Stock NONE = new Stock(Map.of(), 0, 0);
+
+        /** Each input is checked alone, so two suggestions can rely on the same items. */
+        boolean canMake(Recipe recipe) {
+            if (recipe.inputs().isEmpty()) return false;
+            long coinCost = recipe.coins();
+            for (Map.Entry<String, Integer> input : recipe.inputs().entrySet()) {
+                switch (input.getKey()) {
+                    case COIN_INPUT -> coinCost += input.getValue();
+                    case BIT_INPUT -> {
+                        if (bits < input.getValue()) return false;
+                    }
+                    // Other currencies have no reliable match here, so they count as not held.
+                    default -> {
+                        if (held.getOrDefault(input.getKey(), 0L) < input.getValue()) return false;
+                    }
+                }
+            }
+            return coins >= coinCost;
+        }
+    }
+
+    /**
+     * {@code canMake}: every input of a recipe is held. {@code canBuy}: has a price within the coins held.
+     * {@code priced} and {@code unpriced} hold the rest. A suggestion is in one list only.
+     */
+    public record Result(int totalPower, List<Owned> owned, List<Suggestion> canMake, List<Suggestion> canBuy,
+                         List<Suggestion> priced, List<Suggestion> unpriced) {}
 
     private AccessorySuggestions() {}
 
     public static Result build(List<AccessoryItem> bag, Map<String, ReferenceItem> items, AccessoryFamilies families,
-                               Map<String, Integer> power, Function<String, OptionalDouble> price) {
+                               Map<String, Integer> power, Function<String, OptionalDouble> price,
+                               Function<String, List<Recipe>> recipes, Stock stock) {
         List<Owned> owned = new ArrayList<>();
         Map<String, Integer> best = new HashMap<>();
         Set<String> ownedIds = new HashSet<>();
@@ -66,6 +102,8 @@ public final class AccessorySuggestions {
         }
         owned.sort(Comparator.comparingInt(Owned::power).reversed().thenComparing(Owned::name));
 
+        List<Suggestion> canMake = new ArrayList<>();
+        List<Suggestion> canBuy = new ArrayList<>();
         List<Suggestion> priced = new ArrayList<>();
         List<Suggestion> unpriced = new ArrayList<>();
         for (ReferenceItem item : items.values()) {
@@ -75,15 +113,22 @@ public final class AccessorySuggestions {
             int gain = power.getOrDefault(rarity, 0) - best.getOrDefault(families.family(item.sbId()), 0);
             if (gain <= 0) continue;
             OptionalDouble cost = price.apply(item.sbId());
-            if (cost.isPresent() && cost.getAsDouble() > 0) {
-                priced.add(new Suggestion(item.sbId(), item.name(), rarity, gain, cost.getAsDouble()));
-            } else {
-                unpriced.add(new Suggestion(item.sbId(), item.name(), rarity, gain, Double.NaN));
-            }
+            boolean hasPrice = cost.isPresent() && cost.getAsDouble() > 0;
+            Suggestion suggestion = new Suggestion(item.sbId(), item.name(), rarity, gain,
+                hasPrice ? cost.getAsDouble() : Double.NaN);
+            if (recipes.apply(item.sbId()).stream().anyMatch(stock::canMake)) canMake.add(suggestion);
+            else if (hasPrice && cost.getAsDouble() <= stock.coins()) canBuy.add(suggestion);
+            else if (hasPrice) priced.add(suggestion);
+            else unpriced.add(suggestion);
         }
-        priced.sort(Comparator.comparingDouble(Suggestion::coinsPerPower).thenComparing(Suggestion::name));
+        // Double.compare puts NaN last, so what has no price follows what has one.
+        Comparator<Suggestion> byCoinsPerPower = Comparator.comparingDouble(Suggestion::coinsPerPower)
+            .thenComparing(Suggestion::name);
+        canMake.sort(byCoinsPerPower);
+        canBuy.sort(byCoinsPerPower);
+        priced.sort(byCoinsPerPower);
         unpriced.sort(Comparator.comparingInt(Suggestion::gain).reversed().thenComparing(Suggestion::name));
-        return new Result(total, owned, priced, unpriced);
+        return new Result(total, owned, canMake, canBuy, priced, unpriced);
     }
 
     static String effectiveRarity(String rarity, boolean recombobulated) {

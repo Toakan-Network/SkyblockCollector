@@ -13,6 +13,8 @@ differs.
 - A catch at the goal tier or higher meets a trophy goal.
 - Accessory families come from NEU's `constants/misc.json`, at most once a day, on first opening the Accessories tab.
   Only `talisman_upgrades` and `ignored_talisman` are kept (`config/skyblock-collector/accessory_families.json`).
+- Can make now checks direct recipe inputs against `totals()`, purse + bank and bits. Other currency inputs count as
+  not held, and unlocks aren't checked (no collection levels in the API).
 - Pack-changeable data: catch hints are lang keys `skyblock-collector.hint.<trophy id>`, power per rarity is
   `assets/skyblock-collector/accessory_power.json`.
 - No item icons: SkyblockDB's API is plain Java, with no `ItemStack`. Names use rarity colours.

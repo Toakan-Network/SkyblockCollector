@@ -4,6 +4,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import org.junit.jupiter.api.Test;
 import skyblockdb.api.AccessoryItem;
+import skyblockdb.api.Recipe;
 import skyblockdb.api.ReferenceItem;
 
 import java.time.Instant;
@@ -39,8 +40,76 @@ class AccessorySuggestionsTest {
 
     private static AccessorySuggestions.Result build(List<AccessoryItem> bag, Map<String, ReferenceItem> items,
                                                      Map<String, Double> prices) {
+        return build(bag, items, prices, Map.of(), AccessorySuggestions.Stock.NONE);
+    }
+
+    private static AccessorySuggestions.Result build(List<AccessoryItem> bag, Map<String, ReferenceItem> items,
+                                                     Map<String, Double> prices, Map<String, Recipe> recipes,
+                                                     AccessorySuggestions.Stock stock) {
         return AccessorySuggestions.build(bag, items, FAMILIES, POWER, id -> prices.containsKey(id)
-            ? OptionalDouble.of(prices.get(id)) : OptionalDouble.empty());
+            ? OptionalDouble.of(prices.get(id)) : OptionalDouble.empty(),
+            id -> recipes.containsKey(id) ? List.of(recipes.get(id)) : List.of(), stock);
+    }
+
+    private static Recipe recipe(String output, Map<String, Integer> inputs, long coins) {
+        return new Recipe("crafting", output, 1, inputs, coins, 0, "");
+    }
+
+    private static List<String> ids(List<AccessorySuggestions.Suggestion> list) {
+        return list.stream().map(AccessorySuggestions.Suggestion::id).toList();
+    }
+
+    @Test
+    void allInputsHeldCanBeMade() {
+        var r = build(List.of(), items(item("B", "RARE")), Map.of("B", 800.0),
+            Map.of("B", recipe("B", Map.of("IRON", 9), 0)),
+            new AccessorySuggestions.Stock(Map.of("IRON", 9L), 0, 0));
+        assertEquals(List.of("B"), ids(r.canMake()));
+        assertTrue(r.priced().isEmpty());
+    }
+
+    @Test
+    void oneInputShortCannotBeMade() {
+        var r = build(List.of(), items(item("B", "RARE")), Map.of("B", 800.0),
+            Map.of("B", recipe("B", Map.of("IRON", 9, "GOLD", 1), 0)),
+            new AccessorySuggestions.Stock(Map.of("IRON", 9L), 0, 0));
+        assertTrue(r.canMake().isEmpty());
+        assertEquals(List.of("B"), ids(r.priced()));
+    }
+
+    @Test
+    void upgradeCanUseTheLowerTierInTheBag() {
+        var r = build(List.of(bag("A_TALISMAN", false)), items(item("A_TALISMAN", "COMMON"), item("A_RING", "UNCOMMON")),
+            Map.of(), Map.of("A_RING", recipe("A_RING", Map.of("A_TALISMAN", 1), 0)),
+            new AccessorySuggestions.Stock(Map.of("A_TALISMAN", 1L), 0, 0));
+        assertEquals(List.of("A_RING"), ids(r.canMake()));
+        assertEquals(2, r.canMake().getFirst().gain());
+    }
+
+    @Test
+    void noGainIsLeftOutEvenWhenMakeable() {
+        var r = build(List.of(bag("A_RING", false)), items(item("A_TALISMAN", "COMMON"), item("A_RING", "UNCOMMON")),
+            Map.of(), Map.of("A_TALISMAN", recipe("A_TALISMAN", Map.of("IRON", 1), 0)),
+            new AccessorySuggestions.Stock(Map.of("IRON", 1L), 0, 0));
+        assertTrue(r.canMake().isEmpty());
+    }
+
+    @Test
+    void canBuyOnlyWithinCoins() {
+        var r = build(List.of(), items(item("CHEAP", "COMMON"), item("DEAR", "COMMON")),
+            Map.of("CHEAP", 100.0, "DEAR", 101.0), Map.of(), new AccessorySuggestions.Stock(Map.of(), 100, 0));
+        assertEquals(List.of("CHEAP"), ids(r.canBuy()));
+        assertEquals(List.of("DEAR"), ids(r.priced()));
+    }
+
+    @Test
+    void currencyInputs() {
+        var coinsAndBits = recipe("B", Map.of("SKYBLOCK_COIN", 50, "SKYBLOCK_BIT", 10), 50);
+        assertTrue(new AccessorySuggestions.Stock(Map.of(), 100, 10).canMake(coinsAndBits));
+        assertFalse(new AccessorySuggestions.Stock(Map.of(), 99, 10).canMake(coinsAndBits));
+        assertFalse(new AccessorySuggestions.Stock(Map.of(), 100, 9).canMake(coinsAndBits));
+        // Currencies without a match are never held, even with plenty of everything else.
+        assertFalse(new AccessorySuggestions.Stock(Map.of(), 1e9, 1e9).canMake(recipe("B", Map.of("SKYBLOCK_COPPER", 1), 0)));
     }
 
     @Test

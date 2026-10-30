@@ -16,14 +16,22 @@ Counts come from SkyblockAPI. If a tab says nothing is recorded, open the in-gam
 
 ## Accessories
 Open your Accessory Bag once so the mod can see it.
-- **What's next** lists missing accessories and upgrades, with the power each adds, ranked by coins per power.
-  Items with no lowest BIN or bazaar price are listed after those.
+- **What's next** lists missing accessories and upgrades, with the power each adds, in three groups. Each is ranked by
+  coins per power, and items with no lowest BIN or bazaar price come last.
+  - **Can make now:** you hold every ingredient of a recipe, counting sacks, inventory, ender chest, backpacks and the
+    Accessory Bag, so an upgrade can use the lower tier you own. Coin and bit costs are checked too.
+  - **Can buy now:** its price is within your purse plus bank.
+  - **Everything else.**
 - **Owned** lists your accessories with their power. Lower tiers of a family and copies show as not counted.
 
 Only the best accessory of a family counts, and a recombobulated one counts one rarity higher.
 
 ## Known limitations
 - Prices are the item's own price. An upgrade recipe that uses up the lower tier can cost less than shown.
+- Can make now means you have the materials, not that the recipe is unlocked: the mod can't see collection levels, so
+  the row shows what the recipe needs.
+- Can make now uses counts from when each container was last open, checks direct ingredients only, and checks each
+  accessory alone, so two rows can rely on the same items. Currencies other than coins and bits count as not held.
 - Suggestions include anything the item list calls an accessory, including ones you may not be able to get yet.
 - The power total doesn't include Dungeon doubling.
 - No item icons yet.
