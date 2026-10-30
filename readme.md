@@ -88,4 +88,4 @@ NotEnoughUpdates repository on GitHub, for accessory upgrade lines. Only those l
 Requires Java 25. `./gradlew build` puts the jar in `build/libs`.
 
 ## License
-GPL-3.0-only (see `LICENSE`).
+GPL-3.0-only (see `LICENSE` and `NOTICE`).
