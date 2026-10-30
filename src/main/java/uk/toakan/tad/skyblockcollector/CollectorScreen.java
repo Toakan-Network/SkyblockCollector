@@ -89,8 +89,23 @@ public final class CollectorScreen extends Screen {
             Settings.save();
             changed();
         }).bounds(x, 8, 90, 20).build());
-        if (tab == Tab.ACCESSORIES) AccessoryFamilies.ensureLoaded();
+        if (tab == Tab.ACCESSORIES) {
+            AccessoryFamilies.ensureLoaded();
+            if (!s.showAll) {
+                addRenderableWidget(Button.builder(Component.translatable(filterKey(s.accessoryFilter)), b -> {
+                    s.accessoryFilter = s.accessoryFilter == null ? AccessorySuggestions.Filter.CRAFT : s.accessoryFilter.next();
+                    Settings.save();
+                    changed();
+                }).bounds(x + 94, 8, 90, 20).build());
+            }
+        }
         addHudButtons(s);
+    }
+
+    private static String filterKey(AccessorySuggestions.Filter filter) {
+        if (filter == AccessorySuggestions.Filter.CRAFT) return "skyblock-collector.screen.filter.craft";
+        if (filter == AccessorySuggestions.Filter.BUY) return "skyblock-collector.screen.filter.buy";
+        return "skyblock-collector.screen.filter.all";
     }
 
     /** Second row, on the right: the panel on or off, this tab's section on or off, and Move HUD. */
@@ -234,7 +249,9 @@ public final class CollectorScreen extends Screen {
             return out;
         }
         if (result.canMake().isEmpty() && result.canBuy().isEmpty() && result.priced().isEmpty() && result.unpriced().isEmpty()) {
-            out.add(Line.text(Component.translatable("skyblock-collector.accessory.no_suggestions"), GREEN));
+            boolean filtered = Settings.get().accessoryFilter != null && Settings.get().accessoryFilter != AccessorySuggestions.Filter.ALL;
+            out.add(filtered ? Line.text(Component.translatable("skyblock-collector.accessory.filter_empty"), GREY)
+                : Line.text(Component.translatable("skyblock-collector.accessory.no_suggestions"), GREEN));
             return out;
         }
         out.add(Line.text(Component.translatable("skyblock-collector.accessory.estimate"), DARK_GREY));

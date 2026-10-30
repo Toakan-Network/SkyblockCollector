@@ -16,6 +16,8 @@ public final class Settings {
     public String fishGoal = TrophyGoals.BRONZE;
     /** Trophy tabs: every trophy with its counts instead of only what is missing. Accessories: owned instead of next. */
     public boolean showAll = false;
+    /** Accessory suggestions on the screen and the HUD. Null (a value this version doesn't know) shows everything. */
+    public AccessorySuggestions.Filter accessoryFilter = AccessorySuggestions.Filter.ALL;
 
     /** The HUD panel, and which sections it shows. */
     public boolean hud = true;

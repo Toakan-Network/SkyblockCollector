@@ -72,6 +72,29 @@ class AccessorySuggestionsTest {
     }
 
     @Test
+    void filtersKeepOnlyCraftOrBuy() {
+        var shop = new Recipe("shop", "NPC_ITEM", 1, Map.of("IRON", 1), 0, 0, "SOME_NPC");
+        var r = build(List.of(bag("OWNED", false)), items(item("OWNED", "COMMON"), item("NPC_ITEM", "RARE"), item("CRAFTED", "RARE"),
+                item("AUCTION", "RARE"), item("DEAR", "RARE"), item("NO_PRICE", "RARE")),
+            Map.of("AUCTION", 10.0, "DEAR", 1000.0),
+            Map.of("NPC_ITEM", shop, "CRAFTED", recipe("CRAFTED", Map.of("IRON", 1), 0)),
+            new AccessorySuggestions.Stock(Map.of("IRON", 1L), 100, 0));
+
+        var craft = r.filtered(AccessorySuggestions.Filter.CRAFT);
+        assertEquals(List.of("CRAFTED"), ids(craft.canMake()));
+        assertTrue(craft.canBuy().isEmpty() && craft.priced().isEmpty() && craft.unpriced().isEmpty());
+        assertEquals(1, craft.owned().size());
+
+        var buy = r.filtered(AccessorySuggestions.Filter.BUY);
+        assertEquals(List.of("NPC_ITEM"), ids(buy.canMake()));
+        assertEquals(List.of("AUCTION"), ids(buy.canBuy()));
+        assertTrue(buy.priced().isEmpty() && buy.unpriced().isEmpty());
+
+        assertEquals(r, r.filtered(AccessorySuggestions.Filter.ALL));
+        assertEquals(r, r.filtered(null));
+    }
+
+    @Test
     void eventShopIsNeverCanMake() {
         var shop = new Recipe("shop", "B", 1, Map.of("TREAT", 1), 0, 0, "EVENT_NPC");
         var r = build(List.of(), items(item("B", "RARE")), Map.of(), Map.of("B", shop),

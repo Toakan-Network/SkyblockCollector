@@ -23,6 +23,8 @@ Open your Accessory Bag once so the mod can see it.
   - **Can buy from an NPC now:** the same check, for what an NPC sells instead of a recipe you craft.
   - **Can buy now:** its auction or bazaar price is within your purse plus bank.
   - **Everything else.**
+- The **Filter** button switches What's next and the HUD panel between All, Craft (what you can craft now) and Buy (what
+  you can buy now from an NPC, the auction house or the bazaar).
 - ⚒ marks a Can make row that needs the Forge.
 - Items from a shop that only opens for an event never count as Can make, and the row names the event.
 - Only one accessory of a family counts, so options in a family that add the same power (such as the Abicases) show as

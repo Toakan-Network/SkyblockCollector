@@ -77,7 +77,27 @@ public final class AccessorySuggestions {
      * {@code priced} and {@code unpriced} hold the rest. A suggestion is in one list only.
      */
     public record Result(int totalPower, List<Owned> owned, List<Suggestion> canMake, List<Suggestion> canBuy,
-                         List<Suggestion> priced, List<Suggestion> unpriced) {}
+                         List<Suggestion> priced, List<Suggestion> unpriced) {
+        /** Only what the filter asks for; what is owned stays. */
+        public Result filtered(Filter filter) {
+            if (filter == Filter.CRAFT) {
+                return new Result(totalPower, owned, canMake.stream().filter(s -> !s.shop()).toList(), List.of(), List.of(), List.of());
+            }
+            if (filter == Filter.BUY) {
+                return new Result(totalPower, owned, canMake.stream().filter(Suggestion::shop).toList(), canBuy, List.of(), List.of());
+            }
+            return this;
+        }
+    }
+
+    /** Which suggestions to show: everything, what can be crafted now, or what can be bought now (NPC, auction, bazaar). */
+    public enum Filter {
+        ALL, CRAFT, BUY;
+
+        public Filter next() {
+            return values()[(ordinal() + 1) % values().length];
+        }
+    }
 
     private AccessorySuggestions() {}
 

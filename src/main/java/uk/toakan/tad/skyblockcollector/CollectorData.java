@@ -34,7 +34,7 @@ public final class CollectorData {
         AccessoryFamilies families = AccessoryFamilies.current();
         return AccessorySuggestions.build(db.accessories(), db.referenceItems(),
             families == null ? AccessoryFamilies.EMPTY : families, power(), id -> price(db, id), db::recipes, stock(db),
-            eventNpcs());
+            eventNpcs()).filtered(Settings.get().accessoryFilter);
     }
 
     /** The event's name for a row, or the event's ID when no lang file names it. */
