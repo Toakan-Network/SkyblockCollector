@@ -54,7 +54,8 @@ Rows per section (`hudRows`, default 5) and the panel's colours and corner radiu
 - Can make now uses counts from when each container was last open, checks direct ingredients only, and checks each
   accessory alone, so two rows can rely on the same items. Currencies other than coins and bits count as not held.
 - Suggestions include anything the item list calls an accessory, including ones you may not be able to get yet.
-- The power total doesn't include Dungeon doubling.
+- The power total doesn't include Dungeon doubling, Abicase contact bonuses (+1 power per 2 Abiphone contacts) or
+  accessories whose rarity was raised by other means (`upgradedRarity`, such as Book of Progression).
 - No item icons yet.
 
 ## Requirements
