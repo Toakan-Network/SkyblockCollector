@@ -238,7 +238,8 @@ public final class CollectorScreen extends Screen {
             return out;
         }
         out.add(Line.text(Component.translatable("skyblock-collector.accessory.estimate"), DARK_GREY));
-        addGroup(db, out, "skyblock-collector.accessory.can_make", result.canMake(), true);
+        addGroup(db, out, "skyblock-collector.accessory.can_make", result.canMake().stream().filter(s -> !s.shop()).toList(), true);
+        addGroup(db, out, "skyblock-collector.accessory.can_buy_npc", result.canMake().stream().filter(s -> s.shop()).toList(), true);
         addGroup(db, out, "skyblock-collector.accessory.can_buy", result.canBuy(), false);
         List<AccessorySuggestions.Suggestion> rest = new ArrayList<>(result.priced());
         rest.addAll(result.unpriced());

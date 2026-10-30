@@ -16,11 +16,12 @@ Counts come from SkyblockAPI. If a tab says nothing is recorded, open the in-gam
 
 ## Accessories
 Open your Accessory Bag once so the mod can see it.
-- **What's next** lists missing accessories and upgrades, with the power each adds, in three groups. Each is ranked by
+- **What's next** lists missing accessories and upgrades, with the power each adds, in four groups. Each is ranked by
   coins per power, and items with no lowest BIN or bazaar price come last.
   - **Can make now:** you hold every ingredient of a recipe, counting sacks, inventory, ender chest, backpacks and the
     Accessory Bag, so an upgrade can use the lower tier you own. Coin and bit costs are checked too.
-  - **Can buy now:** its price is within your purse plus bank.
+  - **Can buy from an NPC now:** the same check, for what an NPC sells instead of a recipe you craft.
+  - **Can buy now:** its auction or bazaar price is within your purse plus bank.
   - **Everything else.**
 - ⚒ marks a Can make row that needs the Forge.
 - Items from a shop that only opens for an event never count as Can make, and the row names the event.

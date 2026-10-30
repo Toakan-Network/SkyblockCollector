@@ -62,6 +62,16 @@ class AccessorySuggestionsTest {
     }
 
     @Test
+    void npcShopRecipesAreMarkedAsPurchases() {
+        var shop = new Recipe("shop", "B", 1, Map.of("IRON", 1), 0, 0, "SOME_NPC");
+        var r = build(List.of(), items(item("B", "RARE"), item("C", "RARE")), Map.of(),
+            Map.of("B", shop, "C", recipe("C", Map.of("IRON", 1), 0)),
+            new AccessorySuggestions.Stock(Map.of("IRON", 1L), 0, 0));
+        assertTrue(r.canMake().stream().filter(s -> s.id().equals("B")).findFirst().orElseThrow().shop());
+        assertFalse(r.canMake().stream().filter(s -> s.id().equals("C")).findFirst().orElseThrow().shop());
+    }
+
+    @Test
     void eventShopIsNeverCanMake() {
         var shop = new Recipe("shop", "B", 1, Map.of("TREAT", 1), 0, 0, "EVENT_NPC");
         var r = build(List.of(), items(item("B", "RARE")), Map.of(), Map.of("B", shop),

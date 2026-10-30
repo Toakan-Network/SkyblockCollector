@@ -26,6 +26,7 @@ public final class AccessorySuggestions {
     private static final List<String> SPECIAL_RARITIES = List.of("SPECIAL", "VERY_SPECIAL");
     private static final String ACCESSORY = "ACCESSORY";
     private static final String FORGE = "forge";
+    private static final String SHOP = "shop";
     private static final String COIN_INPUT = "SKYBLOCK_COIN";
     private static final String BIT_INPUT = "SKYBLOCK_BIT";
 
@@ -34,9 +35,11 @@ public final class AccessorySuggestions {
 
     /**
      * Something to get. {@code price} is NaN when unknown. {@code forge}: it can be made, but only in the Forge.
-     * {@code event}: the event its shop opens for when that is the reason it can't be made, else empty.
+     * {@code shop}: the same, but only by buying it from an NPC. {@code event}: the event its shop opens for when that
+     * is the reason it can't be made, else empty.
      */
-    public record Suggestion(String id, String name, String rarity, int gain, double price, boolean forge, String event) {
+    public record Suggestion(String id, String name, String rarity, int gain, double price, boolean forge, boolean shop,
+                             String event) {
         public double coinsPerPower() {
             return price / gain;
         }
@@ -122,10 +125,11 @@ public final class AccessorySuggestions {
             List<Recipe> all = recipes.apply(item.sbId());
             List<Recipe> makeable = all.stream().filter(r -> !eventNpcs.containsKey(r.npc())).filter(stock::canMake).toList();
             boolean forge = !makeable.isEmpty() && makeable.stream().allMatch(r -> FORGE.equals(r.type()));
+            boolean shop = !makeable.isEmpty() && makeable.stream().allMatch(r -> SHOP.equals(r.type()));
             String event = !makeable.isEmpty() ? "" : all.stream().map(r -> eventNpcs.getOrDefault(r.npc(), ""))
                 .filter(e -> !e.isEmpty()).findFirst().orElse("");
             Suggestion suggestion = new Suggestion(item.sbId(), item.name(), rarity, gain,
-                hasPrice ? cost.getAsDouble() : Double.NaN, forge, event);
+                hasPrice ? cost.getAsDouble() : Double.NaN, forge, shop, event);
             if (!makeable.isEmpty()) canMake.add(suggestion);
             else if (hasPrice && cost.getAsDouble() <= stock.coins()) canBuy.add(suggestion);
             else if (hasPrice) priced.add(suggestion);
