@@ -1,0 +1,18 @@
+# SkyblockCollector
+
+Fabric client mod (mod id `skyblock-collector`, Java package `uk.toakan.tad.skyblockcollector`) for Hypixel SkyBlock:
+tracks collections the game's Collections menu doesn't cover. Shared rules (commits, versioning, Hypixel rules,
+resource light, 26.2 + 26.3 from one jar) are in the parent `Games\Minecraft\CLAUDE.md`. This file only has what
+differs.
+
+## Design
+- All SkyBlock data comes from SkyblockDB's API (`libs/skyblock-db-api-<ver>.jar`). Never call SkyblockAPI from here:
+  it would tie the jar to one Minecraft version. Missing data goes into SkyblockDB's API first.
+- `trophyFrogs()`, `trophyFish()` and `accessories()` read live and are client thread only.
+- `TrophyGoals` and `AccessorySuggestions` are pure logic with unit tests; `CollectorScreen` only draws.
+- A catch at the goal tier or higher meets a trophy goal.
+- Accessory families come from NEU's `constants/misc.json`, at most once a day, on first opening the Accessories tab.
+  Only `talisman_upgrades` and `ignored_talisman` are kept (`config/skyblock-collector/accessory_families.json`).
+- Pack-changeable data: catch hints are lang keys `skyblock-collector.hint.<trophy id>`, power per rarity is
+  `assets/skyblock-collector/accessory_power.json`.
+- No item icons: SkyblockDB's API is plain Java, with no `ItemStack`. Names use rarity colours.

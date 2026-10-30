@@ -1,0 +1,13 @@
+{
+  "COMMON": 3,
+  "UNCOMMON": 5,
+  "RARE": 8,
+  "EPIC": 12,
+  "LEGENDARY": 16,
+  "MYTHIC": 22,
+  "DIVINE": 28,
+  "SPECIAL": 3,
+  "VERY_SPECIAL": 5,
+  "ULTIMATE": 1,
+  "ADMIN": 22
+}

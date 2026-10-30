@@ -1,0 +1,25 @@
+{
+	"schemaVersion": 1,
+	"id": "skyblock-collector",
+	"version": "${version}",
+	"name": "SkyblockCollector",
+	"description": "Hypixel SkyBlock collection tracker. Set a goal for Trophy Frogs and Trophy Fish and see what is missing, and see which accessories to get next. Read-only and client-side.",
+	"authors": [
+		"Tad"
+	],
+	"license": "GPL-3.0-only",
+	"environment": "client",
+	"entrypoints": {
+		"client": [
+			"uk.toakan.tad.skyblockcollector.SkyblockCollectorClient"
+		]
+	},
+	"depends": {
+		"fabricloader": ">=0.19.5",
+		"minecraft": ["~26.2", "~26.3"],
+		"java": ">=25",
+		"fabric-api": ">=0.161.0",
+		"hypixel-mod-api": ">=1.0.2",
+		"skyblock-db": ">=0.6.0"
+	}
+}
