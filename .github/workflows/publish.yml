@@ -1,0 +1,95 @@
+# Attaches the jar to the GitHub release whenever a release is published, and publishes it to Modrinth and CurseForge
+# once those are set up. The release notes become the changelog, and CurseForge rejects files without one, so don't
+# leave them empty.
+#
+# Runs as three chained jobs: check the tag -> build (reusing build.yml) -> publish.
+#
+# Setup (a platform is skipped while its token secret is missing, so these can wait):
+#   1. Create the project on Modrinth and add its Project ID as a repo secret named MODRINTH_ID.
+#   2. Create a Modrinth personal access token with the "Create versions" scope and add it as a repo secret named
+#      MODRINTH_TOKEN.
+#   3. Create the project on CurseForge and add its Project ID as a repo secret named CURSEFORGE_ID.
+#   4. Create a CurseForge API token (account settings > API tokens) and add it as a repo secret named
+#      CURSEFORGE_TOKEN.
+#   5. Publish SkyblockDB on both platforms first, under the slug skyblock-db: it is a required dependency below.
+#
+# The Hypixel Mod API isn't on CurseForge, so it is left out of the CurseForge relations; the
+# CurseForge description tells players to install it themselves.
+
+name: publish
+
+on:
+  release:
+    types: [published]
+
+# Read-only by default; only the publish job gets write access.
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v7
+
+      - name: check tag matches mod_version
+        run: |
+          v=$(grep '^mod_version=' gradle.properties | cut -d= -f2 | tr -d '[:space:]')
+          tag="${GITHUB_REF_NAME#v}"
+          if [ "$tag" != "$v" ]; then
+            echo "::error::Release tag $GITHUB_REF_NAME does not match mod_version $v in gradle.properties"
+            exit 1
+          fi
+
+  build:
+    needs: check
+    uses: ./.github/workflows/build.yml
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v7
+
+      - name: download built jar
+        uses: actions/download-artifact@v8
+        with:
+          name: Artifacts
+          path: build/libs/
+
+      - name: read mod version
+        id: ver
+        run: echo "v=$(grep '^mod_version=' gradle.properties | cut -d= -f2 | tr -d '[:space:]')" >> "$GITHUB_OUTPUT"
+
+      - name: publish to modrinth, curseforge and github
+        uses: Kir-Antipov/mc-publish@c23376546a97f5ba7984e94445da359459b14419 # v3.3
+        with:
+          modrinth-id: ${{ secrets.MODRINTH_ID }}
+          modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
+          modrinth-featured: true
+
+          curseforge-id: ${{ secrets.CURSEFORGE_ID }}
+          curseforge-token: ${{ secrets.CURSEFORGE_TOKEN }}
+
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+          files: |
+            build/libs/!(*-@(dev|sources|javadoc)).jar
+
+          name: SkyblockCollector ${{ steps.ver.outputs.v }}
+          version: ${{ steps.ver.outputs.v }}
+          version-type: ${{ github.event.release.prerelease && 'beta' || 'release' }}
+          loaders: fabric
+          game-versions: |
+            26.2
+          java: |
+            25
+
+          dependencies: |
+            fabric-api(required){curseforge:306612}
+            hypixel-mod-api(required)#(ignore:curseforge)
+            skyblock-db(required)

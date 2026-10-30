@@ -1,0 +1,40 @@
+# Copies modrinth.md to the Modrinth project description whenever it changes on main
+# (or when run by hand from the Actions tab). Skips itself until the Modrinth project is set up.
+#
+# Setup:
+#   Uses MODRINTH_ID from publish.yml, plus a repo secret MODRINTH_PROJECT_TOKEN: a Modrinth personal
+#   access token with the "Write projects" scope.
+
+name: modrinth-description
+
+on:
+  push:
+    branches: [main]
+    paths: [modrinth.md]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v7
+
+      - name: update modrinth description
+        env:
+          MODRINTH_ID: ${{ secrets.MODRINTH_ID }}
+          MODRINTH_PROJECT_TOKEN: ${{ secrets.MODRINTH_PROJECT_TOKEN }}
+        run: |
+          if [ -z "$MODRINTH_ID" ] || [ -z "$MODRINTH_PROJECT_TOKEN" ]; then
+            echo "::notice::Modrinth isn't set up yet, skipping"
+            exit 0
+          fi
+          jq -Rs '{body: .}' modrinth.md > body.json
+          curl --fail-with-body -sS -X PATCH "https://api.modrinth.com/v2/project/$MODRINTH_ID" \
+            -H "Authorization: $MODRINTH_PROJECT_TOKEN" \
+            -H "Content-Type: application/json" \
+            -H "User-Agent: ${{ github.repository }}/modrinth-description" \
+            --data @body.json
