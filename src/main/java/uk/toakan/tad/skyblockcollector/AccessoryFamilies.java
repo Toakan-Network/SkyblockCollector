@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * Which accessories are upgrades of each other, and which never count, from NotEnoughUpdates' repository
  * ({@code constants/misc.json}). Only those two lists are kept in {@code accessory_families.json}, and it is
- * downloaded at most once a day, the first time the accessories tab opens.
+ * downloaded at most once a day, the first time the accessories tab opens or the HUD's accessories section draws.
  */
 public final class AccessoryFamilies {
     public static final AccessoryFamilies EMPTY = parse(new JsonObject());

@@ -26,6 +26,18 @@ Open your Accessory Bag once so the mod can see it.
 
 Only the best accessory of a family counts, and a recombobulated one counts one rarity higher.
 
+## HUD panel
+A panel on SkyBlock shows what's missing for each trophy goal and your top accessory suggestions, with what you can
+make first. A section is left out when it has nothing to show: goal met, no catches recorded yet, or Accessory Bag not
+opened yet.
+
+The buttons on the J screen turn the panel on or off, choose whether the current tab's section is on it, and open
+**Move HUD**: drag to move, a corner to scale, an edge to resize, Shift to place without snapping. With
+[Huddable](https://modrinth.com/mod/huddable) installed, its editor places the panel instead.
+
+Rows per section (`hudRows`, default 5) and the panel's colours and corner radius are in
+`config/skyblock-collector/settings.json`.
+
 ## Known limitations
 - Prices are the item's own price. An upgrade recipe that uses up the lower tier can cost less than shown.
 - Can make now means you have the materials, not that the recipe is unlocked: the mod can't see collection levels, so

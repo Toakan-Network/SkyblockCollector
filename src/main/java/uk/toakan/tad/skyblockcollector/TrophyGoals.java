@@ -31,6 +31,11 @@ public final class TrophyGoals {
         return out;
     }
 
+    /** True when no trophy has a catch at any tier, which usually means its menu hasn't been opened yet. */
+    public static boolean nothingRecorded(List<TrophyProgress> trophies) {
+        return trophies.stream().allMatch(t -> t.caught().values().stream().allMatch(n -> n == 0));
+    }
+
     /** The goal after {@code goal}, wrapping round. */
     public static String next(String goal) {
         return TIERS.get((Math.max(0, TIERS.indexOf(goal)) + 1) % TIERS.size());

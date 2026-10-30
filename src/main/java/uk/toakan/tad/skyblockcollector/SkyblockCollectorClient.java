@@ -62,6 +62,7 @@ public final class SkyblockCollectorClient implements ClientModInitializer {
             })));
 
         SkyblockDetector.register();
+        CollectorHud.register();
         ClientLifecycleEvents.CLIENT_STOPPING.register(client -> JsonFiles.flush());
     }
 }

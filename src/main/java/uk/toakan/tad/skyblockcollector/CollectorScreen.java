@@ -1,28 +1,18 @@
 package uk.toakan.tad.skyblockcollector;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonParser;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.locale.Language;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
-import skyblockdb.api.Currency;
-import skyblockdb.api.PriceSource;
-import skyblockdb.api.ReferenceItem;
 import skyblockdb.api.SkyblockDbApi;
 import skyblockdb.api.TrophyProgress;
 
-import java.io.IOException;
-import java.io.Reader;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.OptionalDouble;
 
 /**
  * Three tabs. Frogs and Fish show what is missing for the chosen goal, or every trophy with its counts. Accessories
@@ -38,13 +28,10 @@ public final class CollectorScreen extends Screen {
     private static final int DARK_GREY = 0xFF777777;
     private static final int WHITE = 0xFFFFFFFF;
     private static final int GREEN = 0xFF55FF55;
-    private static final Map<String, Integer> RARITY_COLORS = Map.of(
-        "COMMON", 0xFFFFFFFF, "UNCOMMON", 0xFF55FF55, "RARE", 0xFF5555FF, "EPIC", 0xFFAA00AA,
-        "LEGENDARY", 0xFFFFAA00, "MYTHIC", 0xFFFF55FF, "DIVINE", 0xFF55FFFF, "SPECIAL", 0xFFFF5555,
-        "VERY_SPECIAL", 0xFFFF5555);
     private static final Map<String, Integer> TIER_COLORS = Map.of(TrophyGoals.BRONZE, 0xFFC97B42,
         TrophyGoals.SILVER, 0xFFC0C0C0, TrophyGoals.GOLD, 0xFFFFAA00, TrophyGoals.DIAMOND, 0xFF55FFFF);
     private static final int TIER_COLUMN = 44;
+    private static final int HUD_BUTTON_WIDTH = 66;
 
     private enum Tab { FROGS, FISH, ACCESSORIES }
 
@@ -62,11 +49,11 @@ public final class CollectorScreen extends Screen {
     private List<Line> lines = List.of();
     private long refreshedAt;
     private int scroll;
-    private Map<String, Integer> power;
 
     public CollectorScreen(Screen parent) {
         super(Component.translatable("skyblock-collector.screen.title"));
         this.parent = parent;
+        CollectorData.forgetPower();
     }
 
     @Override
@@ -84,7 +71,7 @@ public final class CollectorScreen extends Screen {
         }
         x += 8;
         if (tab != Tab.ACCESSORIES) {
-            addRenderableWidget(Button.builder(Component.translatable("skyblock-collector.screen.goal", tierName(goal())), b -> {
+            addRenderableWidget(Button.builder(Component.translatable("skyblock-collector.screen.goal", CollectorData.tierName(goal())), b -> {
                 Settings s = Settings.get();
                 if (tab == Tab.FROGS) s.frogGoal = TrophyGoals.next(s.frogGoal);
                 else s.fishGoal = TrophyGoals.next(s.fishGoal);
@@ -103,10 +90,45 @@ public final class CollectorScreen extends Screen {
             changed();
         }).bounds(x, 8, 90, 20).build());
         if (tab == Tab.ACCESSORIES) AccessoryFamilies.ensureLoaded();
+        addHudButtons(s);
+    }
+
+    /** Second row, on the right: the panel on or off, this tab's section on or off, and Move HUD. */
+    private void addHudButtons(Settings s) {
+        int x = width - 8 - HUD_BUTTON_WIDTH;
+        addRenderableWidget(Button.builder(Component.translatable("skyblock-collector.move_hud"),
+            b -> CollectorHud.openMove(this)).bounds(x, 30, HUD_BUTTON_WIDTH, 16).build());
+        x -= HUD_BUTTON_WIDTH + 4;
+        addRenderableWidget(Button.builder(Component.translatable(sectionOnHud(s)
+            ? "skyblock-collector.screen.hud_section.on" : "skyblock-collector.screen.hud_section.off"), b -> {
+            switch (tab) {
+                case FROGS -> s.hudFrogs = !s.hudFrogs;
+                case FISH -> s.hudFish = !s.hudFish;
+                case ACCESSORIES -> s.hudAccessories = !s.hudAccessories;
+            }
+            Settings.save();
+            changed();
+        }).bounds(x, 30, HUD_BUTTON_WIDTH, 16).build());
+        x -= HUD_BUTTON_WIDTH + 4;
+        addRenderableWidget(Button.builder(Component.translatable(s.hud
+            ? "skyblock-collector.screen.hud.on" : "skyblock-collector.screen.hud.off"), b -> {
+            s.hud = !s.hud;
+            Settings.save();
+            changed();
+        }).bounds(x, 30, HUD_BUTTON_WIDTH, 16).build());
+    }
+
+    private static boolean sectionOnHud(Settings s) {
+        return switch (tab) {
+            case FROGS -> s.hudFrogs;
+            case FISH -> s.hudFish;
+            case ACCESSORIES -> s.hudAccessories;
+        };
     }
 
     private void changed() {
         refreshedAt = 0;
+        CollectorHud.refresh();
         rebuildWidgets();
     }
 
@@ -120,15 +142,6 @@ public final class CollectorScreen extends Screen {
 
     private static String goal() {
         return tab == Tab.FROGS ? Settings.get().frogGoal : Settings.get().fishGoal;
-    }
-
-    private static Component tierName(String tier) {
-        return Component.translatable(switch (tier) {
-            case TrophyGoals.SILVER -> "skyblock-collector.tier.silver";
-            case TrophyGoals.GOLD -> "skyblock-collector.tier.gold";
-            case TrophyGoals.DIAMOND -> "skyblock-collector.tier.diamond";
-            default -> "skyblock-collector.tier.bronze";
-        });
     }
 
     @Override
@@ -180,18 +193,17 @@ public final class CollectorScreen extends Screen {
         List<TrophyProgress> missing = TrophyGoals.missing(trophies, goal);
         List<Line> out = new ArrayList<>();
         out.add(Line.text(Component.translatable("skyblock-collector.trophy.progress",
-            trophies.size() - missing.size(), trophies.size(), tierName(goal)), GOLD));
-        boolean nothingRecorded = trophies.stream().allMatch(t -> t.caught().values().stream().allMatch(n -> n == 0));
-        if (nothingRecorded) out.add(Line.text(Component.translatable("skyblock-collector.trophy.empty"), GREY));
+            trophies.size() - missing.size(), trophies.size(), CollectorData.tierName(goal)), GOLD));
+        if (TrophyGoals.nothingRecorded(trophies)) out.add(Line.text(Component.translatable("skyblock-collector.trophy.empty"), GREY));
         else if (missing.isEmpty()) out.add(Line.text(Component.translatable("skyblock-collector.trophy.complete"), GREEN));
         if (Settings.get().showAll) {
             for (TrophyProgress t : trophies) {
-                out.add(new Line(Component.literal(t.name()), trophyColor(db, t), null, 0, t));
+                out.add(new Line(Component.literal(t.name()), CollectorData.trophyColor(db, t), null, 0, t));
             }
         } else {
             for (TrophyProgress t : missing) {
                 String hint = hintKey(t);
-                out.add(new Line(Component.literal(t.name()), trophyColor(db, t),
+                out.add(new Line(Component.literal(t.name()), CollectorData.trophyColor(db, t),
                     Language.getInstance().has(hint) ? Component.translatable(hint) : null, GREY, null));
             }
         }
@@ -202,27 +214,16 @@ public final class CollectorScreen extends Screen {
         return "skyblock-collector.hint." + t.id().toLowerCase(Locale.ROOT);
     }
 
-    /** Trophy items are named ID_TIER in the item data, each tier with the trophy's rarity. */
-    private static int trophyColor(SkyblockDbApi db, TrophyProgress t) {
-        return db.item(t.id() + "_" + TrophyGoals.BRONZE).map(i -> rarityColor(i.rarity())).orElse(WHITE);
-    }
-
-    private static int rarityColor(String rarity) {
-        return RARITY_COLORS.getOrDefault(rarity, WHITE);
-    }
-
     private List<Line> accessoryLines(SkyblockDbApi db) {
         AccessoryFamilies families = AccessoryFamilies.current();
-        Map<String, ReferenceItem> items = db.referenceItems();
-        AccessorySuggestions.Result result = AccessorySuggestions.build(db.accessories(), items,
-            families == null ? AccessoryFamilies.EMPTY : families, power(), id -> price(db, id), db::recipes, stock(db));
+        AccessorySuggestions.Result result = CollectorData.accessories(db);
         List<Line> out = new ArrayList<>();
         out.add(Line.text(Component.translatable("skyblock-collector.accessory.total",
             result.owned().size(), result.totalPower()), GOLD));
         if (result.owned().isEmpty()) out.add(Line.text(Component.translatable("skyblock-collector.accessory.empty"), GREY));
         if (Settings.get().showAll) {
             for (AccessorySuggestions.Owned o : result.owned()) {
-                out.add(new Line(Component.literal(o.name()), rarityColor(o.rarity()), o.counted()
+                out.add(new Line(Component.literal(o.name()), CollectorData.rarityColor(o.rarity()), o.counted()
                     ? Component.literal(Integer.toString(o.power()))
                     : Component.translatable("skyblock-collector.accessory.not_counted"), o.counted() ? WHITE : DARK_GREY, null));
             }
@@ -259,57 +260,15 @@ public final class CollectorScreen extends Screen {
                         "skyblock-collector.accessory.needs", String.join(", ", needs)));
                 }
             }
-            out.add(new Line(name, rarityColor(s.rarity()), Double.isNaN(s.price())
+            out.add(new Line(name, CollectorData.rarityColor(s.rarity()), Double.isNaN(s.price())
                 ? Component.translatable("skyblock-collector.accessory.no_price")
-                : Component.translatable("skyblock-collector.accessory.per_power", coins(s.price()), coins(s.coinsPerPower())),
+                : Component.translatable("skyblock-collector.accessory.per_power", CollectorData.coins(s.price()), CollectorData.coins(s.coinsPerPower())),
                 Double.isNaN(s.price()) ? GREY : GOLD, null));
         }
     }
 
     private static Component suggestionName(AccessorySuggestions.Suggestion s) {
         return Component.literal(s.name() + " ").append(Component.translatable("skyblock-collector.accessory.gain", s.gain()));
-    }
-
-    private static AccessorySuggestions.Stock stock(SkyblockDbApi db) {
-        Map<String, Currency> currencies = db.currencies();
-        return new AccessorySuggestions.Stock(db.totals(),
-            currency(currencies, "purse") + currency(currencies, "bank"), currency(currencies, "bits"));
-    }
-
-    private static double currency(Map<String, Currency> currencies, String name) {
-        Currency currency = currencies.get(name);
-        return currency == null ? 0 : currency.value();
-    }
-
-    /** What it costs to buy now: lowest BIN, then the bazaar. Empty for what can't be bought. */
-    private static OptionalDouble price(SkyblockDbApi db, String id) {
-        OptionalDouble bin = db.price(id, PriceSource.LOWEST_BIN);
-        return bin.isPresent() && bin.getAsDouble() > 0 ? bin : db.price(id, PriceSource.BAZAAR_BUY);
-    }
-
-    /** 1234567 as "1.23M", 12345 as "12.3k". */
-    private static String coins(double value) {
-        if (value >= 1e9) return String.format("%.2fB", value / 1e9);
-        if (value >= 1e6) return String.format("%.2fM", value / 1e6);
-        if (value >= 1e4) return String.format("%.1fk", value / 1e3);
-        return String.format("%,.0f", value);
-    }
-
-    /** Power per rarity, from {@code accessory_power.json}, so a resource pack can change it. */
-    private Map<String, Integer> power() {
-        if (power == null) {
-            Map<String, Integer> read = new HashMap<>();
-            Identifier id = Identifier.fromNamespaceAndPath(SkyblockCollector.MOD_ID, "accessory_power.json");
-            try (Reader reader = Minecraft.getInstance().getResourceManager().openAsReader(id)) {
-                for (Map.Entry<String, JsonElement> e : JsonParser.parseReader(reader).getAsJsonObject().entrySet()) {
-                    read.put(e.getKey(), e.getValue().getAsInt());
-                }
-            } catch (IOException | RuntimeException e) {
-                SkyblockCollector.LOGGER.warn("Could not read {}: {}", id, e.toString());
-            }
-            power = read;
-        }
-        return power;
     }
 
     @Override

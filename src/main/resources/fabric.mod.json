@@ -12,7 +12,13 @@
 	"entrypoints": {
 		"client": [
 			"uk.toakan.tad.skyblockcollector.SkyblockCollectorClient"
+		],
+		"huddable": [
+			"uk.toakan.tad.skyblockcollector.compat.HuddableCompat"
 		]
+	},
+	"suggests": {
+		"huddable": "*"
 	},
 	"depends": {
 		"fabricloader": ">=0.19.5",
