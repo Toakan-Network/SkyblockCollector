@@ -28,6 +28,7 @@ public final class AccessorySuggestions {
     private static final List<String> RARITIES = List.of("COMMON", "UNCOMMON", "RARE", "EPIC", "LEGENDARY", "MYTHIC", "DIVINE");
     private static final List<String> SPECIAL_RARITIES = List.of("SPECIAL", "VERY_SPECIAL");
     private static final String ACCESSORY = "ACCESSORY";
+    private static final Set<String> NO_MARKET_PROFILES = Set.of("IRONMAN", "STRANDED", "BINGO");
     private static final String FORGE_SLOT = "forge";
     private static final String FORGE = "forge";
     private static final String SHOP = "shop";
@@ -39,6 +40,11 @@ public final class AccessorySuggestions {
      * {@code forging}: it is still in the Forge, not in the bag.
      */
     public record Owned(String id, String name, String rarity, int power, boolean counted, boolean forging) {}
+
+    /** False for profile types shut out of the Auction House and Bazaar, so a market price means nothing to them. */
+    public static boolean hasMarket(String profileType) {
+        return !NO_MARKET_PROFILES.contains(profileType);
+    }
 
     /** A mob an accessory drops from. {@code chance} is per kill as the repository gives it: 0.04 is 4%. */
     public record Drop(String mob, double chance) {}

@@ -144,6 +144,15 @@ class AccessorySuggestionsTest {
         assertEquals(List.of("B"), ids(buildShopLocked(Map.of(), Map.of()).canMake()));
     }
 
+    @Test
+    void ironmanStrandedAndBingoHaveNoMarket() {
+        assertFalse(AccessorySuggestions.hasMarket("IRONMAN"));
+        assertFalse(AccessorySuggestions.hasMarket("STRANDED"));
+        assertFalse(AccessorySuggestions.hasMarket("BINGO"));
+        assertTrue(AccessorySuggestions.hasMarket("NORMAL"));
+        assertTrue(AccessorySuggestions.hasMarket("UNKNOWN"));
+    }
+
     private static Mob mob(String name, String key, double chance) {
         return new Mob(name, name, "", "", List.of(new LootTable(name, 1, 0, 0, List.of(new MobDrop(key, "item", chance, 1, 1, "")))));
     }

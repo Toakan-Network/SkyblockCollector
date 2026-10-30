@@ -47,6 +47,7 @@
   "skyblock-collector.accessory.gain": "+%s power",
   "skyblock-collector.accessory.per_power": "%s (%s per power)",
   "skyblock-collector.accessory.no_price": "No price",
+  "skyblock-collector.accessory.no_market": "This profile can't use the Auction House or Bazaar, so only NPC shops count as buying.",
   "skyblock-collector.accessory.can_make": "Can make now (materials held)",
   "skyblock-collector.accessory.can_claim": "Can claim now (rank reward)",
   "skyblock-collector.accessory.can_buy_npc": "Can buy from an NPC now (cost held)",

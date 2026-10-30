@@ -26,6 +26,8 @@ Open your Accessory Bag once so the mod can see it.
 - The **Filter** button switches What's next and the HUD panel between All, Craft (what you can craft now), Buy (what
   you can buy now from an NPC, the auction house or the bazaar) and Drops (what a mob is known to drop, with the mob
   and chance on the J screen).
+- On Ironman, Stranded and Bingo profiles, which can't use the Auction House or Bazaar, market prices are left out, so
+  Buy only means NPC shops and rows are ranked by power.
 - ⚒ marks a Can make row that needs the Forge.
 - Items from a shop that only opens for an event never count as Can make, and the row names the event.
 - Odger's teeth and Researcher Ribery's accessories (Applicant's Statement up to PhD's Grimoire) are rewards for your

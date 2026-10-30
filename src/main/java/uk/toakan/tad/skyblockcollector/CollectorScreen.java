@@ -265,7 +265,9 @@ public final class CollectorScreen extends Screen {
                 : Line.text(Component.translatable("skyblock-collector.accessory.no_suggestions"), GREEN));
             return out;
         }
-        out.add(Line.text(Component.translatable("skyblock-collector.accessory.estimate"), DARK_GREY));
+        out.add(CollectorData.hasMarket(db)
+            ? Line.text(Component.translatable("skyblock-collector.accessory.estimate"), DARK_GREY)
+            : Line.text(Component.translatable("skyblock-collector.accessory.no_market"), DARK_GREY));
         addGroup(db, out, "skyblock-collector.accessory.can_claim", result.canClaim(), false);
         addGroup(db, out, "skyblock-collector.accessory.can_make", result.canMake().stream().filter(s -> !s.shop()).toList(), true);
         addGroup(db, out, "skyblock-collector.accessory.can_buy_npc", result.canMake().stream().filter(s -> s.shop()).toList(), true);
@@ -297,7 +299,7 @@ public final class CollectorScreen extends Screen {
                 }
             }
             out.add(new Line(name, CollectorData.rarityColor(s.rarity()), Double.isNaN(s.price())
-                ? Component.translatable("skyblock-collector.accessory.no_price")
+                ? (CollectorData.hasMarket(db) ? Component.translatable("skyblock-collector.accessory.no_price") : null)
                 : Component.translatable("skyblock-collector.accessory.per_power", CollectorData.coins(s.price()), CollectorData.coins(s.coinsPerPower())),
                 Double.isNaN(s.price()) ? GREY : GOLD, null));
         }

@@ -9,6 +9,7 @@ import net.minecraft.resources.Identifier;
 import skyblockdb.api.Currency;
 import skyblockdb.api.ForgeItem;
 import skyblockdb.api.PriceSource;
+import skyblockdb.api.Profile;
 import skyblockdb.api.SkyblockDbApi;
 import skyblockdb.api.TrophyProgress;
 
@@ -114,8 +115,18 @@ public final class CollectorData {
         return String.format("%,.0f", value);
     }
 
+    /** Whether the current profile can use the Auction House and Bazaar. True until its type is known. */
+    public static boolean hasMarket(SkyblockDbApi db) {
+        String current = db.currentProfile().orElse(null);
+        for (Profile profile : db.profiles()) {
+            if (profile.profileUuid().equals(current)) return AccessorySuggestions.hasMarket(profile.type());
+        }
+        return true;
+    }
+
     /** What it costs to buy now: lowest BIN, then the bazaar. Empty for what can't be bought. */
     private static OptionalDouble price(SkyblockDbApi db, String id) {
+        if (!hasMarket(db)) return OptionalDouble.empty();
         OptionalDouble bin = db.price(id, PriceSource.LOWEST_BIN);
         return bin.isPresent() && bin.getAsDouble() > 0 ? bin : db.price(id, PriceSource.BAZAAR_BUY);
     }
