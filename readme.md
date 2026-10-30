@@ -34,6 +34,9 @@ Open your Accessory Bag once so the mod can see it.
   one row, the easiest to get.
 - **Owned** lists your accessories with their power. Lower tiers of a family and copies show as not counted.
 
+An accessory in the Forge counts as owned, so upgrading one doesn't lower your power or suggest its family again. Open
+the Forge menu once so the mod can see it.
+
 Only the best accessory of a family counts, and a recombobulated one counts one rarity higher.
 
 ## HUD panel
@@ -63,7 +66,7 @@ Rows per section (`hudRows`, default 5) and the panel's colours and corner radiu
 - Minecraft 26.2, Java 25
 - Fabric Loader and Fabric API
 - [Hypixel Mod API](https://modrinth.com/mod/hypixel-mod-api)
-- SkyblockDB 0.6.0 or newer
+- SkyblockDB 0.7.0 or newer
 
 ## Network use
 On first opening the Accessories tab, at most once a day, the mod downloads `constants/misc.json` from the

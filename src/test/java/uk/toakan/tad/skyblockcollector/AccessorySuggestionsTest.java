@@ -49,7 +49,7 @@ class AccessorySuggestionsTest {
                                                      AccessorySuggestions.Stock stock) {
         return AccessorySuggestions.build(bag, items, FAMILIES, POWER, id -> prices.containsKey(id)
             ? OptionalDouble.of(prices.get(id)) : OptionalDouble.empty(),
-            id -> recipes.containsKey(id) ? List.of(recipes.get(id)) : List.of(), stock, Map.of("EVENT_NPC", "festival"), Map.of(), Set.of());
+            id -> recipes.containsKey(id) ? List.of(recipes.get(id)) : List.of(), stock, Map.of("EVENT_NPC", "festival"), Map.of(), Set.of(), List.of());
     }
 
     @Test
@@ -95,11 +95,35 @@ class AccessorySuggestionsTest {
         assertEquals(r, r.filtered(null));
     }
 
+    private static AccessorySuggestions.Result buildForging(List<AccessoryItem> bag, Map<String, ReferenceItem> items, List<String> forging) {
+        return AccessorySuggestions.build(bag, items, FAMILIES, POWER, id -> OptionalDouble.of(10), id -> List.of(),
+            AccessorySuggestions.Stock.NONE, Map.of(), Map.of(), Set.of(), forging);
+    }
+
+    @Test
+    void forgingAccessoryCountsAsOwned() {
+        var r = buildForging(List.of(), items(item("A_TALISMAN", "COMMON"), item("A_RING", "UNCOMMON"), item("A_ARTIFACT", "EPIC")), List.of("A_RING"));
+        assertEquals(5, r.totalPower());
+        assertTrue(r.owned().getFirst().forging());
+        assertTrue(r.owned().getFirst().counted());
+        // Only the tier above is left to get, and it adds what is above the one being forged.
+        assertEquals(List.of("A_ARTIFACT"), ids(r.priced()));
+        assertEquals(7, r.priced().getFirst().gain());
+    }
+
+    @Test
+    void forgingSomethingElseChangesNothing() {
+        var r = buildForging(List.of(), items(item("B", "RARE"), new ReferenceItem("SWORD", "SWORD", "EPIC", "SWORD", "repo", null)), List.of("SWORD", "UNKNOWN"));
+        assertEquals(0, r.totalPower());
+        assertTrue(r.owned().isEmpty());
+        assertEquals(List.of("B"), ids(r.priced()));
+    }
+
     @Test
     void earnedRewardIsClaimableEvenWithoutCoins() {
         var shop = new Recipe("shop", "TOOTH", 1, Map.of("SKYBLOCK_COIN", 100), 0, 0, "ODGER");
         var r = AccessorySuggestions.build(List.of(), items(item("TOOTH", "RARE")), FAMILIES, POWER, id -> OptionalDouble.empty(),
-            id -> List.of(shop), AccessorySuggestions.Stock.NONE, Map.of(), Map.of(), Set.of("TOOTH"));
+            id -> List.of(shop), AccessorySuggestions.Stock.NONE, Map.of(), Map.of(), Set.of("TOOTH"), List.of());
         assertEquals(List.of("TOOTH"), ids(r.canClaim()));
         assertTrue(r.unpriced().isEmpty());
         assertEquals(List.of("TOOTH"), ids(r.filtered(AccessorySuggestions.Filter.BUY).canClaim()));
@@ -110,7 +134,7 @@ class AccessorySuggestionsTest {
     void lockedRewardIsNeitherMakeableNorBuyable() {
         var shop = new Recipe("shop", "TOOTH", 1, Map.of("SKYBLOCK_COIN", 100), 0, 0, "ODGER");
         var r = AccessorySuggestions.build(List.of(), items(item("TOOTH", "RARE")), FAMILIES, POWER, id -> OptionalDouble.of(50),
-            id -> List.of(shop), new AccessorySuggestions.Stock(Map.of(), 1000, 0), Map.of(), Map.of("TOOTH", "adept_trophy_fisher"), Set.of());
+            id -> List.of(shop), new AccessorySuggestions.Stock(Map.of(), 1000, 0), Map.of(), Map.of("TOOTH", "adept_trophy_fisher"), Set.of(), List.of());
         assertTrue(r.canMake().isEmpty());
         assertTrue(r.canBuy().isEmpty());
         assertEquals("adept_trophy_fisher", r.priced().getFirst().needs());
@@ -133,7 +157,7 @@ class AccessorySuggestionsTest {
             items(item("CASE_A", "RARE"), item("CASE_B", "RARE"), item("CASE_C", "RARE")),
             AccessoryFamilies.parse(misc), POWER, id -> id.equals("CASE_A") ? OptionalDouble.of(50) : OptionalDouble.empty(),
             id -> id.equals("CASE_B") ? List.of(recipe("CASE_B", Map.of("IRON", 1), 0)) : List.of(),
-            new AccessorySuggestions.Stock(Map.of("IRON", 1L), 0, 0), Map.of(), Map.of(), Set.of());
+            new AccessorySuggestions.Stock(Map.of("IRON", 1L), 0, 0), Map.of(), Map.of(), Set.of(), List.of());
         assertEquals(List.of("CASE_B"), ids(r.canMake()));
         assertTrue(r.priced().isEmpty());
         assertTrue(r.unpriced().isEmpty());

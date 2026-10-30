@@ -8,7 +8,7 @@ differs.
 ## Design
 - All SkyBlock data comes from SkyblockDB's API (`libs/skyblock-db-api-<ver>.jar`). Never call SkyblockAPI from here:
   it would tie the jar to one Minecraft version. Missing data goes into SkyblockDB's API first.
-- `trophyFrogs()`, `trophyFish()` and `accessories()` read live and are client thread only.
+- `trophyFrogs()`, `trophyFish()`, `accessories()` and `forging()` read live and are client thread only.
 - `TrophyGoals`, `AccessorySuggestions` and `HudRows` are pure logic with unit tests; `CollectorScreen` and `CollectorHud`
   only draw, and read shared values through `CollectorData`.
 - `CollectorHud` works rows out at most once a second on the client tick; drawing only reads the finished list.

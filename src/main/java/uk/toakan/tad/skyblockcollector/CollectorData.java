@@ -7,6 +7,7 @@ import net.minecraft.locale.Language;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import skyblockdb.api.Currency;
+import skyblockdb.api.ForgeItem;
 import skyblockdb.api.PriceSource;
 import skyblockdb.api.SkyblockDbApi;
 import skyblockdb.api.TrophyProgress;
@@ -44,7 +45,8 @@ public final class CollectorData {
         claimable.removeAll(locked.keySet());
         return AccessorySuggestions.build(db.accessories(), db.referenceItems(),
             families == null ? AccessoryFamilies.EMPTY : families, power(), id -> price(db, id), db::recipes, stock(db),
-            eventNpcs(), locked, claimable).filtered(Settings.get().accessoryFilter);
+            eventNpcs(), locked, claimable, db.forging().stream().map(ForgeItem::sbId).toList())
+            .filtered(Settings.get().accessoryFilter);
     }
 
     /** The name of an event or rank for a row, or its ID when no lang file names it. */

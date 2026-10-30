@@ -64,6 +64,7 @@
   "skyblock-collector.needs.master_trophy_fisher": "Master Trophy Fisher",
   "skyblock-collector.accessory.no_suggestions": "Nothing left to suggest.",
   "skyblock-collector.accessory.not_counted": "not counted",
+  "skyblock-collector.accessory.forging": "(in the Forge)",
   "skyblock-collector.accessory.estimate": "Prices are estimates: an upgrade recipe that uses the lower tier can cost less.",
   "skyblock-collector.hint.common_frog": "Caught everywhere.",
   "skyblock-collector.hint.exploding_frog": "Combine Lily Pads until they explode.",

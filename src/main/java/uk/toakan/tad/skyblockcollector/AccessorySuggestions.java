@@ -25,13 +25,17 @@ public final class AccessorySuggestions {
     private static final List<String> RARITIES = List.of("COMMON", "UNCOMMON", "RARE", "EPIC", "LEGENDARY", "MYTHIC", "DIVINE");
     private static final List<String> SPECIAL_RARITIES = List.of("SPECIAL", "VERY_SPECIAL");
     private static final String ACCESSORY = "ACCESSORY";
+    private static final String FORGE_SLOT = "forge";
     private static final String FORGE = "forge";
     private static final String SHOP = "shop";
     private static final String COIN_INPUT = "SKYBLOCK_COIN";
     private static final String BIT_INPUT = "SKYBLOCK_BIT";
 
-    /** An owned accessory. {@code counted} is false when a better one of its family, or a copy, is what counts. */
-    public record Owned(String id, String name, String rarity, int power, boolean counted) {}
+    /**
+     * An owned accessory. {@code counted} is false when a better one of its family, or a copy, is what counts.
+     * {@code forging}: it is still in the Forge, not in the bag.
+     */
+    public record Owned(String id, String name, String rarity, int power, boolean counted, boolean forging) {}
 
     /**
      * Something to get. {@code price} is NaN when unknown. {@code forge}: it can be made, but only in the Forge.
@@ -105,18 +109,26 @@ public final class AccessorySuggestions {
     public static Result build(List<AccessoryItem> bag, Map<String, ReferenceItem> items, AccessoryFamilies families,
                                Map<String, Integer> power, Function<String, OptionalDouble> price,
                                Function<String, List<Recipe>> recipes, Stock stock, Map<String, String> eventNpcs,
-                               Map<String, String> locked, Set<String> claimable) {
+                               Map<String, String> locked, Set<String> claimable, List<String> forging) {
         List<Owned> owned = new ArrayList<>();
         Map<String, Integer> best = new HashMap<>();
         Set<String> ownedIds = new HashSet<>();
-        for (AccessoryItem item : bag) {
+        // An accessory in the Forge counts as owned: its lower tier went in as an ingredient, so the bag alone would
+        // show that family as empty until it is collected. Whether it will be recombobulated can't be known.
+        List<AccessoryItem> held = new ArrayList<>(bag);
+        for (String id : forging) {
+            ReferenceItem info = items.get(id);
+            if (info != null && ACCESSORY.equals(info.category())) held.add(new AccessoryItem(id, FORGE_SLOT, false));
+        }
+        for (AccessoryItem item : held) {
             ReferenceItem info = items.get(item.sbId());
             String rarity = effectiveRarity(info == null ? "" : info.rarity(), item.recombobulated());
             int value = power.getOrDefault(rarity, 0);
             String family = families.family(item.sbId());
             if (!families.ignored(item.sbId())) best.merge(family, value, Math::max);
             ownedIds.add(item.sbId());
-            owned.add(new Owned(item.sbId(), info == null ? item.sbId() : info.name(), rarity, value, false));
+            owned.add(new Owned(item.sbId(), info == null ? item.sbId() : info.name(), rarity, value, false,
+                FORGE_SLOT.equals(item.slot())));
         }
         // Each family counts once, on its first accessory of the best power.
         Set<String> countedFamilies = new HashSet<>();
@@ -126,7 +138,7 @@ public final class AccessorySuggestions {
             String family = families.family(o.id());
             if (!families.ignored(o.id()) && o.power() == best.get(family) && countedFamilies.add(family)) {
                 total += o.power();
-                owned.set(i, new Owned(o.id(), o.name(), o.rarity(), o.power(), true));
+                owned.set(i, new Owned(o.id(), o.name(), o.rarity(), o.power(), true, o.forging()));
             }
         }
         owned.sort(Comparator.comparingInt(Owned::power).reversed().thenComparing(Owned::name));

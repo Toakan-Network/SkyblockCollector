@@ -238,7 +238,9 @@ public final class CollectorScreen extends Screen {
         if (result.owned().isEmpty()) out.add(Line.text(Component.translatable("skyblock-collector.accessory.empty"), GREY));
         if (Settings.get().showAll) {
             for (AccessorySuggestions.Owned o : result.owned()) {
-                out.add(new Line(Component.literal(o.name()), CollectorData.rarityColor(o.rarity()), o.counted()
+                Component name = Component.literal(o.name());
+                if (o.forging()) name = name.copy().append(" ").append(Component.translatable("skyblock-collector.accessory.forging"));
+                out.add(new Line(name, CollectorData.rarityColor(o.rarity()), o.counted()
                     ? Component.literal(Integer.toString(o.power()))
                     : Component.translatable("skyblock-collector.accessory.not_counted"), o.counted() ? WHITE : DARK_GREY, null));
             }
