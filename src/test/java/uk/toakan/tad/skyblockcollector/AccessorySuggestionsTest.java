@@ -95,6 +95,26 @@ class AccessorySuggestionsTest {
         assertEquals(r, r.filtered(null));
     }
 
+    @Test
+    void redundantListsCopiesAndLowerTiers() {
+        var r = build(List.of(bag("B", false), bag("B", false), bag("A_TALISMAN", false), bag("A_RING", false), bag("C", false)),
+            items(item("B", "RARE"), item("A_TALISMAN", "COMMON"), item("A_RING", "UNCOMMON"), item("C", "EPIC")), Map.of());
+        assertEquals(List.of("A_TALISMAN", "B"), r.redundant().stream().map(AccessorySuggestions.Redundant::id).toList());
+        assertEquals("A_RING", r.redundant().getFirst().keptName());
+        assertFalse(r.redundant().getFirst().copy());
+        assertEquals("B", r.redundant().getLast().keptName());
+        assertTrue(r.redundant().getLast().copy());
+    }
+
+    @Test
+    void redundantSkipsIgnoredAndTheForge() {
+        var ignored = build(List.of(bag("IGNORED", false)), items(item("IGNORED", "EPIC")), Map.of());
+        assertTrue(ignored.redundant().isEmpty());
+        // The Ring in the Forge beats the Talisman in the bag; the Forge's own item is never listed.
+        var forging = buildForging(List.of(bag("A_TALISMAN", false)), items(item("A_TALISMAN", "COMMON"), item("A_RING", "UNCOMMON")), List.of("A_RING"));
+        assertEquals(List.of("A_TALISMAN"), forging.redundant().stream().map(AccessorySuggestions.Redundant::id).toList());
+    }
+
     private static AccessorySuggestions.Result buildForging(List<AccessoryItem> bag, Map<String, ReferenceItem> items, List<String> forging) {
         return AccessorySuggestions.build(bag, items, FAMILIES, POWER, id -> OptionalDouble.of(10), id -> List.of(),
             AccessorySuggestions.Stock.NONE, Map.of(), Map.of(), Set.of(), forging);

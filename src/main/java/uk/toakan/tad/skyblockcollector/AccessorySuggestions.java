@@ -38,6 +38,12 @@ public final class AccessorySuggestions {
     public record Owned(String id, String name, String rarity, int power, boolean counted, boolean forging) {}
 
     /**
+     * An accessory in the bag that adds no power because of another. {@code copy}: {@code keptName} is the same item;
+     * otherwise it is a better one of the same family.
+     */
+    public record Redundant(String id, String name, String rarity, String keptName, boolean copy) {}
+
+    /**
      * Something to get. {@code price} is NaN when unknown. {@code forge}: it can be made, but only in the Forge.
      * {@code shop}: the same, but only by buying it from an NPC. {@code needs}: the event or rank that is the reason it
      * can't be got now, else empty.
@@ -82,14 +88,14 @@ public final class AccessorySuggestions {
      * is in one list only.
      */
     public record Result(int totalPower, List<Owned> owned, List<Suggestion> canClaim, List<Suggestion> canMake,
-                         List<Suggestion> canBuy, List<Suggestion> priced, List<Suggestion> unpriced) {
+                         List<Suggestion> canBuy, List<Suggestion> priced, List<Suggestion> unpriced, List<Redundant> redundant) {
         /** Only what the filter asks for; what is owned stays. A claim comes from an NPC, so it goes with buying. */
         public Result filtered(Filter filter) {
             if (filter == Filter.CRAFT) {
-                return new Result(totalPower, owned, List.of(), canMake.stream().filter(s -> !s.shop()).toList(), List.of(), List.of(), List.of());
+                return new Result(totalPower, owned, List.of(), canMake.stream().filter(s -> !s.shop()).toList(), List.of(), List.of(), List.of(), redundant);
             }
             if (filter == Filter.BUY) {
-                return new Result(totalPower, owned, canClaim, canMake.stream().filter(Suggestion::shop).toList(), canBuy, List.of(), List.of());
+                return new Result(totalPower, owned, canClaim, canMake.stream().filter(Suggestion::shop).toList(), canBuy, List.of(), List.of(), redundant);
             }
             return this;
         }
@@ -141,6 +147,18 @@ public final class AccessorySuggestions {
                 owned.set(i, new Owned(o.id(), o.name(), o.rarity(), o.power(), true, o.forging()));
             }
         }
+        Map<String, Owned> kept = new HashMap<>();
+        for (Owned o : owned) {
+            if (o.counted()) kept.put(families.family(o.id()), o);
+        }
+        // What is in the Forge isn't in the bag, and an ignored accessory never counts, whatever else is owned.
+        List<Redundant> redundant = new ArrayList<>();
+        for (Owned o : owned) {
+            Owned counted = kept.get(families.family(o.id()));
+            if (o.counted() || o.forging() || counted == null || families.ignored(o.id())) continue;
+            redundant.add(new Redundant(o.id(), o.name(), o.rarity(), counted.name(), counted.id().equals(o.id())));
+        }
+        redundant.sort(Comparator.comparing(Redundant::name));
         owned.sort(Comparator.comparingInt(Owned::power).reversed().thenComparing(Owned::name));
 
         List<Suggestion> canClaim = new ArrayList<>();
@@ -186,7 +204,7 @@ public final class AccessorySuggestions {
         Set<String> seen = new HashSet<>();
         return new Result(total, owned, firstOfEach(canClaim, families, seen), firstOfEach(canMake, families, seen),
             firstOfEach(canBuy, families, seen),
-            firstOfEach(priced, families, seen), firstOfEach(unpriced, families, seen));
+            firstOfEach(priced, families, seen), firstOfEach(unpriced, families, seen), redundant);
     }
 
     /**

@@ -32,7 +32,8 @@ Open your Accessory Bag once so the mod can see it.
   that the item moves to its own **Can claim now** group at the top. The Buy filter includes it.
 - Only one accessory of a family counts, so options in a family that add the same power (such as the Abicases) show as
   one row, the easiest to get.
-- **Owned** lists your accessories with their power. Lower tiers of a family and copies show as not counted.
+- **Owned** lists your accessories with their power. Lower tiers of a family and copies show as not counted, and a list
+  at the top collects them with what each one is a copy of or below, so you can see what is taking up bag space.
 
 An accessory in the Forge counts as owned, so upgrading one doesn't lower your power or suggest its family again. Open
 the Forge menu once so the mod can see it.

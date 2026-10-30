@@ -237,6 +237,14 @@ public final class CollectorScreen extends Screen {
             result.owned().size(), result.totalPower()), GOLD));
         if (result.owned().isEmpty()) out.add(Line.text(Component.translatable("skyblock-collector.accessory.empty"), GREY));
         if (Settings.get().showAll) {
+            if (!result.redundant().isEmpty()) {
+                out.add(Line.text(Component.translatable("skyblock-collector.accessory.redundant", result.redundant().size()), GOLD));
+                for (AccessorySuggestions.Redundant r : result.redundant()) {
+                    out.add(new Line(Component.literal(r.name()), CollectorData.rarityColor(r.rarity()), Component.translatable(r.copy()
+                        ? "skyblock-collector.accessory.copy_of" : "skyblock-collector.accessory.below", r.keptName()), GREY, null));
+                }
+                out.add(Line.text(Component.translatable("skyblock-collector.accessory.all_owned"), GOLD));
+            }
             for (AccessorySuggestions.Owned o : result.owned()) {
                 Component name = Component.literal(o.name());
                 if (o.forging()) name = name.copy().append(" ").append(Component.translatable("skyblock-collector.accessory.forging"));
