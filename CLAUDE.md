@@ -20,7 +20,10 @@ differs.
   not held, and unlocks aren't checked (no collection levels in the API).
 - Whether an event is running can't be read, so shops in `accessory_events.json` never count as can make.
 - NPC milestones are in no API: `Milestones` reads the "<NPC>'s Milestones" item while a menu is open and keeps the level
-  per profile in `config/skyblock-collector/milestones.json`.
+  per profile in `config/skyblock-collector/milestones.json`. An `npc` no menu ever reports (`dark_auction`) stays at 0, so
+  its shops always name the requirement.
+- Shop requirements aren't in SkyblockDB or NEU's item files: `accessory_events.json` and `accessory_milestones.json` are
+  written by hand from the wiki.
 - Pack-changeable data: catch hints are lang keys `skyblock-collector.hint.<trophy id>`, power per rarity is
   `assets/skyblock-collector/accessory_power.json`.
 - No item icons: SkyblockDB's API is plain Java, with no `ItemStack`. Names use rarity colours.

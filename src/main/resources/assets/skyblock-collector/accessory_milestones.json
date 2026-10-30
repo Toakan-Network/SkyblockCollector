@@ -2,5 +2,8 @@
   "TORRHUS_RING": "miria:3",
   "TORRHUS_ARTIFACT": "miria:5",
   "MOONGLADE_RING": "agatha:3",
-  "MOONGLADE_ARTIFACT": "agatha:5"
+  "MOONGLADE_ARTIFACT": "agatha:5",
+  "SHADY_RING": "dark_auction:1",
+  "CROOKED_ARTIFACT": "dark_auction:3",
+  "SEAL_OF_THE_FAMILY": "dark_auction:7"
 }

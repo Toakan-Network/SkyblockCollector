@@ -31,7 +31,8 @@ Open your Accessory Bag once so the mod can see it.
   Trophy Fisher or Frog Collector rank, worked out from your counts. Until you reach the rank the row names it; after
   that the item moves to its own **Can claim now** group at the top. The Buy filter includes it.
 - Torrhus and Moonglade Rings and Artifacts need a Miria or Agatha milestone. The mod reads yours when you open that
-  NPC's menu; until it has seen one, those rows name the milestone instead of Can buy.
+  NPC's menu; until it has seen one, those rows name the milestone instead of Can buy. Lucius's accessories need Dark
+  Auction purchases, which the mod can't see, so their rows always name them.
 - Only one accessory of a family counts, so options in a family that add the same power (such as the Abicases) show as
   one row, the easiest to get.
 - **Owned** lists your accessories with their power. Lower tiers of a family and copies show as not counted, and a list

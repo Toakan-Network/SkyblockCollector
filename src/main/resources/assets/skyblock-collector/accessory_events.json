@@ -1,5 +1,9 @@
 {
+  "AGNES_NPC": "year_of_the_witch",
   "BAKER_NPC": "new_year",
+  "DRAKUU_NPC": "cataclysmic_eruption",
   "FEAR_MONGERER_NPC": "spooky_festival",
-  "LUKAS_THE_AQUARIST_NPC": "year_of_the_seal"
+  "LUKAS_THE_AQUARIST_NPC": "year_of_the_seal",
+  "PIG_SHOP_NPC": "year_of_the_pig",
+  "TYASHOI_ALCHEMIST_NPC": "great_spook"
 }
